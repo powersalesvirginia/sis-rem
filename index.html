@@ -657,36 +657,38 @@ function gvDaFolha(f){
 function pgConsolidado(el,u){
   const mes=DB.config.mesRef, perfis=DB.perfis;
   var perfisRN0=DB.perfis.filter(function(x){return !/^g[vc]\b|^g[vc]\s|gerente/i.test(x.nome);});
-  var perfilSel=(PAGE_ARG&&PAGE_ARG.perfil!=null)?PAGE_ARG.perfil:'todos';  // padrão: todos
-  // se um perfil específico foi escolhido mas é de gerente, volta a 'todos'
+  var perfilSel=(PAGE_ARG&&PAGE_ARG.perfil!=null)?PAGE_ARG.perfil:'todos';
   if(perfilSel!=='todos' && !perfisRN0.some(function(x){return x.id===perfilSel;})) perfilSel='todos';
   var verTodos=(perfilSel==='todos');
   const opsU=userOps(u), opSel=(PAGE_ARG&&PAGE_ARG.op!=null)?PAGE_ARG.op:'todas';
   const gvSel=(PAGE_ARG&&PAGE_ARG.gv!=null)?PAGE_ARG.gv:'todos';
-  var idsRN=perfisRN0.map(function(x){return x.id;});
-  let fs=folhasVisiveis(u).filter(function(f){return verTodos?idsRN.includes(f.perfil):f.perfil===perfilSel;});
-  if(opSel!=='todas')fs=fs.filter(function(f){return f.op===+opSel;});
-  if(gvSel!=='todos')fs=fs.filter(function(f){return gvDaFolha(f).some(function(g){return g.id===gvSel;});});
-  const p=verTodos?null:DB.perfis.find(function(x){return x.id===perfilSel;});
-  // Feristas/reserva não entram no ranking — vão para um bloco à parte embaixo
+  // modo de exibição: 'resumido' (padrão) ou 'detalhado' (todos os KPIs)
+  var modoDet=(PAGE_ARG&&PAGE_ARG.det)?true:false;
+
   const ehFerista=function(f){return f.perfil==='rn_reserva'||f.reserva||!f.setor||String(f.setor).trim()==='';};
-  const linhas=fs.map(function(f){return {f:f,c:calcFolha(f,mes)};}).filter(function(x){return x.c && !ehFerista(x.f);}).sort(function(a,b){return b.c.atingTotal-a.c.atingTotal;});
-  // feristas da operação (independente do perfil selecionado, para não sumirem ao trocar filtro)
-  var fsFerista=folhasVisiveis(u).filter(ehFerista);
-  if(opSel!=='todas')fsFerista=fsFerista.filter(function(f){return f.op===+opSel;});
-  if(gvSel!=='todos')fsFerista=fsFerista.filter(function(f){return gvDaFolha(f).some(function(g){return g.id===gvSel;});});
-  fsFerista.sort(function(a,b){return a.op-b.op||String(a.nome).localeCompare(String(b.nome));});
   const podeJustificar=u.papel==='gv'||u.papel==='gc';
   const podeCheck=u.papel==='gv'||u.papel==='gc';
   const ehAdmin=u.papel==='admin';
   const justsTotal=(DB.justificativas||[]).filter(function(j){return j.mes===mes;});
   const pendAdmin=ehAdmin?justsTotal.filter(function(j){return j.status==='pendente';}).length:0;
+  var ocultar = !!window._hideValores;
 
+  // ---- helper: aplica filtros op/gv a uma lista de folhas ----
+  function aplicaFiltros(lista){
+    var r=lista;
+    if(opSel!=='todas') r=r.filter(function(f){return f.op===+opSel;});
+    if(gvSel!=='todos') r=r.filter(function(f){return gvDaFolha(f).some(function(g){return g.id===gvSel;});});
+    return r;
+  }
+
+  // ---- feristas (fora do ranking) ----
+  var fsFerista=aplicaFiltros(folhasVisiveis(u).filter(ehFerista));
+  fsFerista.sort(function(a,b){return a.op-b.op||String(a.nome).localeCompare(String(b.nome));});
+
+  // ---- selects de filtro ----
   var perfisRN=perfis.filter(function(x){return !/^g[vc]\b|^g[vc]\s|gerente/i.test(x.nome);});
   var optsPerf='<option value="todos" '+(perfilSel==='todos'?'selected':'')+'>Todos os perfis</option>'+perfisRN.map(function(x){return '<option value="'+x.id+'" '+(x.id===perfilSel?'selected':'')+'>'+esc(x.nome)+'</option>';}).join('');
   var optsOp='<option value="todas">Todas as operações</option>'+DB.operacoes.filter(function(o){return opsU.includes(o.id);}).map(function(o){return '<option value="'+o.id+'" '+(''+o.id===''+opSel?'selected':'')+'>'+o.id+' — '+esc(o.nome)+'</option>';}).join('');
-
-  // GVs disponíveis conforme operação selecionada (e escopo do usuário)
   var gvsDisp=DB.usuarios.filter(function(g){
     if(g.papel!=='gv') return false;
     var gvOps=g.ops||[];
@@ -699,69 +701,39 @@ function pgConsolidado(el,u){
     return '<option value="'+g.id+'" '+(g.id===gvSel?'selected':'')+'>'+esc(g.nome)+' ('+esc(opNome)+')</option>';
   }).join('');
   var btnPend=ehAdmin&&pendAdmin>0?'<button class="btn yellow sm" onclick="abrirPainelJust()">⚠ '+pendAdmin+' justificativa(s)</button>':'';
+  var btnOlho='<button class="btn ghost sm" onclick="toggleValores()" title="'+(ocultar?'Exibir valores':'Ocultar valores')+'" style="font-size:16px;padding:6px 10px">'+(ocultar?'🙈':'👁')+'</button>';
+  var btnDet='<button class="btn '+(modoDet?'':'ghost')+' sm" onclick="toggleDetalhe()" title="Ver todos os KPIs ou só o resumo">'+(modoDet?'📊 Detalhado':'📋 Resumido')+'</button>';
 
-  var ocultar = !!window._hideValores;
-  var btnOlho = '<button class="btn ghost sm" onclick="toggleValores()" title="'+(ocultar?'Exibir valores':'Ocultar valores')+'" style="font-size:16px;padding:6px 10px">'+(ocultar?'🙈':'👁')+'</button>';
-  var html2='<div class="card"><h2>Consolidado · '+mesLabel(mes)+'<span class="fill"></span>'+btnOlho+btnPend+
+  var html2='<div class="card"><h2>Consolidado · '+mesLabel(mes)+'<span class="fill"></span>'+btnOlho+btnDet+btnPend+
     '<select onchange="setFiltro(\'perfil\',this.value)">'+optsPerf+'</select>'+
     '<select onchange="setFiltro(\'op\',this.value)">'+optsOp+'</select>'+
     ((ehAdmin||u.papel==='gc')?'<select onchange="setFiltro(\'gv\',this.value)">'+optsGv+'</select>':'')+'</h2>';
 
-  // Barra de progresso de checks (GV/GC)
-  if(podeCheck && linhas.length>0){
-    var opsNaView=[...new Set(linhas.map(function(x){return x.f.op;}))];
-    opsNaView.forEach(function(opId){
-      var fsDaOp=linhas.filter(function(x){return x.f.op===opId;});
-      var total=fsDaOp.length;
-      var checks=fsDaOp.filter(function(x){return (DB.checkRns&&DB.checkRns[mes]&&DB.checkRns[mes][u.id+'_'+x.f.id]);}).length;
-      var pct=total?Math.round(checks/total*100):0;
-      var opNome=opDe(opId)?opDe(opId).nome:opId;
-      var stCls=checks===total&&total>0?'completo':checks>0?'parcial':'vazio';
-      var stTxt=checks===total&&total>0?'✔ Todos aprovados — pronto para validar!':checks>0?'⏳ '+checks+' de '+total+' aprovados':'○ Nenhum revisado ainda';
-      html2+='<div style="margin-bottom:12px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:4px">'+
-        '<span>Op. '+opId+' — '+esc(opNome)+'</span>'+
-        '<span id="prog-label-'+opId+'">'+checks+'/'+total+' aprovados</span></div>'+
-        '<div class="progresso-bar"><div class="progresso-bar-fill" id="prog-fill-'+opId+'" style="width:'+pct+'%"></div></div>'+
-        '<div class="status-op-check '+stCls+'" id="prog-status-'+opId+'">'+stTxt+'</div>'+
-        '</div>';
-    });
+  // aviso quando valores ocultos
+  if(ocultar){
+    html2+='<div style="background:var(--blue-soft);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:var(--navy)">🙈 Valores ocultos. Clique no botão 👁 acima para exibir as comissões.</div>';
   }
 
-  // Resumo de checks para Admin
-  if(ehAdmin && linhas.length>0){
-    var opsAdmin=[...new Set(linhas.map(function(x){return x.f.op;}))];
-    html2+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">';
-    opsAdmin.forEach(function(opId){
-      var resumo=resumoChecksOp(mes,opId);
-      var opNome=opDe(opId)?opDe(opId).nome:opId;
-      html2+='<div style="background:#F0F4F8;border-radius:8px;padding:10px 14px;font-size:12px;min-width:180px">';
-      html2+='<div style="font-weight:700;color:var(--navy);margin-bottom:6px">Op. '+opId+' — '+esc(opNome)+'</div>';
-      if(!resumo.length){html2+='<span style="color:var(--mut)">Sem GVs atribuídos</span>';}
-      resumo.forEach(function(r){
-        var ok=r.checks===r.total&&r.total>0;
-        html2+='<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0">';
-        html2+='<span>'+esc(r.gv.nome)+'</span>';
-        html2+='<span style="font-weight:700;color:'+(ok?'var(--green)':r.checks>0?'var(--amber)':'var(--mut)')+'">'+r.checks+'/'+r.total+(ok?' ✔':'')+'</span>';
-        html2+='</div>';
-      });
-      html2+='</div>';
-    });
-    html2+='</div>';
-  }
+  // ===== monta UMA tabela de RNs para um perfil p =====
+  // devolve {html, linhas} — usado tanto no modo perfil único quanto por quadro no modo todos
+  function tabelaPerfil(p, mostrarTitulo){
+    var idsDoP=[p.id];
+    var fs=aplicaFiltros(folhasVisiveis(u).filter(function(f){return f.perfil===p.id && !ehFerista(f);}));
+    var linhas=fs.map(function(f){return {f:f,c:calcFolha(f,mes)};}).filter(function(x){return x.c;}).sort(function(a,b){return b.c.atingTotal-a.c.atingTotal;});
+    if(!linhas.length) return {html:'', linhas:[]};
 
-  if((!p&&!verTodos)||!linhas.length){
-    html2+='<div class="empty">Nenhuma folha com lançamentos para este filtro.</div>';
-  } else {
-    var thKpis=verTodos?'<th>Perfil</th>':p.kpis.map(function(k){return '<th>'+esc(k.k)+'</th>';}).join('');
-    var thExtra='';
-    if(ehAdmin){
-      thExtra='<th>GV Aprovou</th><th>Justif.</th>';
-    } else {
-      if(podeJustificar) thExtra+='<th>Justif.</th>';
-      if(podeCheck) thExtra+='<th title="Marque os RNs que você revisou e aprovou">✔ OK</th>';
+    var h='';
+    if(mostrarTitulo){
+      h+='<div style="font-family:\'Archivo\';font-size:13px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px;padding-left:4px;border-left:4px solid var(--gold)">'+esc(p.nome)+' · '+linhas.length+' RN(s)</div>';
     }
 
+    // colunas de KPI (só no modo detalhado)
+    var thKpis = modoDet ? p.kpis.map(function(k){return '<th>'+esc(k.k)+'</th>';}).join('') : '';
+    var thExtra='';
+    if(ehAdmin){ thExtra='<th>GV Aprovou</th><th>Justif.</th>'; }
+    else { if(podeJustificar) thExtra+='<th>Justif.</th>'; if(podeCheck) thExtra+='<th title="Marque os RNs que você revisou e aprovou">✔ OK</th>'; }
+
+    var tblId='tbl-'+p.id;
     var rows='';
     linhas.forEach(function(x){
       var fid=x.f.id;
@@ -776,22 +748,13 @@ function pgConsolidado(el,u){
       var chkOk=chkObj&&chkObj.ok;
       var chkTitle=chkOk?'Aprovado por você em '+chkObj.data:'Clique para marcar como "De acordo"';
 
-      var kpiCells;
-      if(verTodos){
-        var pf=perfilDe(x.f);
-        kpiCells='<td data-fid="'+fid+'" style="font-size:11px">'+(pf?esc(pf.nome):'—')+'</td>';
-      } else {
-        kpiCells=x.c.itens.map(function(i){return '<td class="'+classAting(i.ating)+'" data-fid="'+fid+'">'+fmtPct(i.ating)+'</td>';}).join('');
-      }
-      var justCell='';
-      var checkCell='';
+      var kpiCells = modoDet ? x.c.itens.map(function(i){return '<td class="'+classAting(i.ating)+'" data-fid="'+fid+'">'+fmtPct(i.ating)+'</td>';}).join('') : '';
 
+      var justCell='', checkCell='';
       if(ehAdmin){
-        // Coluna "GV Aprovou": lista todos os GVs da operação e mostra se cada um aprovou
         var gvsDaOp=DB.usuarios.filter(function(gv){
           if(gv.papel!=='gv') return false;
           if(!(gv.ops||[]).includes(x.f.op)) return false;
-          // se GV tem setores restritos, verificar se este RN está no escopo dele
           if(gv.setores&&gv.setores.trim()){
             var st=gv.setores.split(',').map(function(s){return s.trim();});
             if(x.f.setor&&!st.includes(x.f.setor)&&x.f.perfil!=='rn_reserva') return false;
@@ -799,34 +762,21 @@ function pgConsolidado(el,u){
           return true;
         });
         var gvAprovCell='<td style="text-align:center;min-width:110px">';
-        if(!gvsDaOp.length){
-          gvAprovCell+='<span style="color:var(--mut);font-size:11px">—</span>';
-        } else {
-          gvsDaOp.forEach(function(gv){
-            var gvChk=(DB.checkRns&&DB.checkRns[mes])?DB.checkRns[mes][gv.id+'_'+fid]:null;
-            var gvOk=gvChk&&gvChk.ok;
-            var tooltip=gvOk?esc(gv.nome)+' aprovou em '+esc(gvChk.data):esc(gv.nome)+' ainda não aprovou';
-            gvAprovCell+='<span title="'+tooltip+'" style="display:inline-flex;align-items:center;gap:3px;'+
-              'background:'+(gvOk?'var(--green-soft)':'#F0F4F8')+';'+
-              'color:'+(gvOk?'var(--green)':'var(--mut)')+';'+
-              'border:1px solid '+(gvOk?'var(--green)':'var(--line)')+';'+
-              'border-radius:6px;padding:2px 6px;font-size:10px;font-weight:700;margin:1px">'+
-              (gvOk?'✔ ':'')+esc(gv.nome.split(' ')[0])+'</span>';
-          });
-        }
+        if(!gvsDaOp.length){ gvAprovCell+='<span style="color:var(--mut);font-size:11px">—</span>'; }
+        else { gvsDaOp.forEach(function(gv){
+          var gvChk=(DB.checkRns&&DB.checkRns[mes])?DB.checkRns[mes][gv.id+'_'+fid]:null;
+          var gvOk=gvChk&&gvChk.ok;
+          var tooltip=gvOk?esc(gv.nome)+' aprovou em '+esc(gvChk.data):esc(gv.nome)+' ainda não aprovou';
+          gvAprovCell+='<span title="'+tooltip+'" style="display:inline-flex;align-items:center;gap:3px;background:'+(gvOk?'var(--green-soft)':'#F0F4F8')+';color:'+(gvOk?'var(--green)':'var(--mut)')+';border:1px solid '+(gvOk?'var(--green)':'var(--line)')+';border-radius:6px;padding:2px 6px;font-size:10px;font-weight:700;margin:1px">'+(gvOk?'✔ ':'')+esc(gv.nome.split(' ')[0])+'</span>';
+        }); }
         gvAprovCell+='</td>';
-        justCell=gvAprovCell+
-          '<td style="text-align:center"><button class="just-badge '+badgeCls+'" data-just="'+fid+'" title="Justificativas">'+badgeTxt+'</button></td>';
+        justCell=gvAprovCell+'<td style="text-align:center"><button class="just-badge '+badgeCls+'" data-just="'+fid+'" title="Justificativas">'+badgeTxt+'</button></td>';
       } else {
-        if(podeJustificar){
-          justCell='<td style="text-align:center"><button class="just-badge '+badgeCls+'" data-just="'+fid+'" title="Justificativas">'+badgeTxt+'</button></td>';
-        }
-        if(podeCheck){
-          checkCell='<td style="text-align:center"><button class="check-rn'+(chkOk?' ok':'')+'" data-check="'+fid+'" title="'+esc(chkTitle)+'">'+(chkOk?'✔':'○')+'</button></td>';
-        }
+        if(podeJustificar){ justCell='<td style="text-align:center"><button class="just-badge '+badgeCls+'" data-just="'+fid+'" title="Justificativas">'+badgeTxt+'</button></td>'; }
+        if(podeCheck){ checkCell='<td style="text-align:center"><button class="check-rn'+(chkOk?' ok':'')+'" data-check="'+fid+'" title="'+esc(chkTitle)+'">'+(chkOk?'✔':'○')+'</button></td>'; }
       }
 
-      rows+='<tr data-fid="'+fid+'"'+( chkOk&&!ehAdmin?' style="opacity:.85"':'')+'>'+
+      rows+='<tr data-fid="'+fid+'"'+(chkOk&&!ehAdmin?' style="opacity:.85"':'')+'>'+
         '<td><b>'+x.f.op+'_'+esc(x.f.setor)+'</b></td>'+
         '<td class="l">'+esc(x.f.nome)+statusTag(fid)+' <button class="rn-status-btn" data-status="'+fid+'" title="Marcar Férias / Atestado / Novo">⚑</button></td>'+
         kpiCells+
@@ -836,22 +786,18 @@ function pgConsolidado(el,u){
         justCell+checkCell+'</tr>';
     });
 
-    // ===== MÉDIAS E TOTAIS =====
+    // médias
     var nRns=linhas.length;
-    // média de atingimento por KPI (só quando um perfil específico está selecionado)
-    var mediasKpi=verTodos?[]:p.kpis.map(function(k,ki){
+    var mediasKpi = modoDet ? p.kpis.map(function(k,ki){
       var vals=linhas.map(function(x){return x.c.itens[ki]?x.c.itens[ki].ating:null;}).filter(function(v){return v!=null;});
       if(!vals.length) return null;
       return vals.reduce(function(s,v){return s+v;},0)/vals.length;
-    });
-    var mediaAting=(function(){
-      var vals=linhas.map(function(x){return x.c.atingTotal;}).filter(function(v){return v!=null;});
-      return vals.length?vals.reduce(function(s,v){return s+v;},0)/vals.length:0;
-    })();
+    }) : [];
+    var mediaAting=(function(){var vals=linhas.map(function(x){return x.c.atingTotal;}).filter(function(v){return v!=null;});return vals.length?vals.reduce(function(s,v){return s+v;},0)/vals.length:0;})();
     var somaComissao=linhas.reduce(function(s,x){return s+valorPago(x.f.id,x.c.total||0,x.f.base||0).pago;},0);
     var mediaComissao=nRns?somaComissao/nRns:0;
-
-    var tfKpiCells=verTodos?'<td></td>':mediasKpi.map(function(m){return '<td class="'+classAting(m)+'"><b>'+(m==null?'—':fmtPct(m))+'</b></td>';}).join('');
+    var tfKpiCells = modoDet ? mediasKpi.map(function(m){return '<td class="'+classAting(m)+'"><b>'+(m==null?'—':fmtPct(m))+'</b></td>';}).join('') : '';
+    var nKpiCols = modoDet ? p.kpis.length : 0;
     var colExtra=(ehAdmin?2:0)+((podeJustificar&&!ehAdmin)?1:0)+((podeCheck&&!ehAdmin)?1:0);
     var tfExtra=colExtra>0?'<td colspan="'+colExtra+'"></td>':'';
 
@@ -859,28 +805,79 @@ function pgConsolidado(el,u){
       '<tr style="background:var(--navy);color:#fff;font-weight:800">'+
         '<td colspan="2" style="text-align:left;font-family:\'Archivo\'">MÉDIA · '+nRns+' RN(s)</td>'+
         tfKpiCells+
-        '<td class="'+classTotal(mediaAting)+'" style="color:#fff">'+fmtPct(mediaAting)+'</td>'+
-        '<td></td>'+
-        '<td style="text-align:right">'+(ocultar?'R$ ••••':fmtBRL(mediaComissao))+'</td>'+
-        tfExtra+
-      '</tr>'+
+        '<td class="'+classTotal(mediaAting)+'" style="color:#fff">'+fmtPct(mediaAting)+'</td><td></td>'+
+        '<td style="text-align:right">'+(ocultar?'R$ ••••':fmtBRL(mediaComissao))+'</td>'+tfExtra+'</tr>'+
       '<tr style="background:var(--blue);color:#fff;font-weight:700;font-size:12px">'+
         '<td colspan="2" style="text-align:left">SOMA COMISSÃO</td>'+
-        '<td colspan="'+(verTodos?1:p.kpis.length)+'"></td>'+
-        '<td colspan="2"></td>'+
-        '<td style="text-align:right;font-family:\'Archivo\';font-size:14px">'+(ocultar?'R$ ••••••':fmtBRL(somaComissao))+'</td>'+
-        tfExtra+
-      '</tr>'+
+        '<td colspan="'+(nKpiCols+2)+'"></td>'+
+        '<td style="text-align:right;font-family:\'Archivo\';font-size:14px">'+(ocultar?'R$ ••••••':fmtBRL(somaComissao))+'</td>'+tfExtra+'</tr>'+
     '</tfoot>';
 
-    html2+='<div class="tbl-wrap"><table class="data" id="tbl-consol">'+
+    h+='<div class="tbl-wrap"><table class="data tbl-consol" id="'+tblId+'">'+
       '<thead><tr><th>Setor</th><th style="text-align:left">Nome</th>'+thKpis+
       '<th>% Ating</th><th></th><th>R$ Comissão</th>'+thExtra+'</tr></thead>'+
-      '<tbody>'+rows+'</tbody>'+tfoot+'</table></div>'+
-      '<div class="help">Clique na linha para abrir a folha · ✔ OK = RN revisado pelo GV · ! = justificativa pendente · Médias calculadas sobre os '+nRns+' RN(s) do filtro atual</div>';
+      '<tbody>'+rows+'</tbody>'+tfoot+'</table></div>';
+    return {html:h, linhas:linhas};
   }
 
-  // ===== BLOCO DE FERISTAS / RESERVA (fora do ranking) =====
+  // ===== barra de progresso de checks (GV/GC) — agregada de todos os RNs visíveis =====
+  var todasLinhas=[];
+  var perfisParaMostrar = verTodos ? perfisRN0 : perfisRN0.filter(function(x){return x.id===perfilSel;});
+  // pré-cálculo para a barra de progresso
+  perfisParaMostrar.forEach(function(p){
+    var fs=aplicaFiltros(folhasVisiveis(u).filter(function(f){return f.perfil===p.id && !ehFerista(f);}));
+    fs.forEach(function(f){var c=calcFolha(f,mes); if(c) todasLinhas.push({f:f,c:c});});
+  });
+
+  if(podeCheck && todasLinhas.length>0){
+    var opsNaView=[...new Set(todasLinhas.map(function(x){return x.f.op;}))];
+    opsNaView.forEach(function(opId){
+      var fsDaOp=todasLinhas.filter(function(x){return x.f.op===opId;});
+      var total=fsDaOp.length;
+      var checks=fsDaOp.filter(function(x){return (DB.checkRns&&DB.checkRns[mes]&&DB.checkRns[mes][u.id+'_'+x.f.id]);}).length;
+      var pct=total?Math.round(checks/total*100):0;
+      var opNome=opDe(opId)?opDe(opId).nome:opId;
+      var stCls=checks===total&&total>0?'completo':checks>0?'parcial':'vazio';
+      var stTxt=checks===total&&total>0?'✔ Todos aprovados — pronto para validar!':checks>0?'⏳ '+checks+' de '+total+' aprovados':'○ Nenhum revisado ainda';
+      html2+='<div style="margin-bottom:12px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:4px"><span>Op. '+opId+' — '+esc(opNome)+'</span><span>'+checks+'/'+total+' aprovados</span></div>'+
+        '<div class="progresso-bar"><div class="progresso-bar-fill" style="width:'+pct+'%"></div></div>'+
+        '<div class="status-op-check '+stCls+'">'+stTxt+'</div></div>';
+    });
+  }
+
+  // resumo de checks admin
+  if(ehAdmin && todasLinhas.length>0){
+    var opsAdmin=[...new Set(todasLinhas.map(function(x){return x.f.op;}))];
+    html2+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">';
+    opsAdmin.forEach(function(opId){
+      var resumo=resumoChecksOp(mes,opId);
+      var opNome=opDe(opId)?opDe(opId).nome:opId;
+      html2+='<div style="background:#F0F4F8;border-radius:8px;padding:10px 14px;font-size:12px;min-width:180px">';
+      html2+='<div style="font-weight:700;color:var(--navy);margin-bottom:6px">Op. '+opId+' — '+esc(opNome)+'</div>';
+      if(!resumo.length){html2+='<span style="color:var(--mut)">Sem GVs atribuídos</span>';}
+      resumo.forEach(function(r){
+        var ok=r.checks===r.total&&r.total>0;
+        html2+='<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0"><span>'+esc(r.gv.nome)+'</span><span style="font-weight:700;color:'+(ok?'var(--green)':r.checks>0?'var(--amber)':'var(--mut)')+'">'+r.checks+'/'+r.total+(ok?' ✔':'')+'</span></div>';
+      });
+      html2+='</div>';
+    });
+    html2+='</div>';
+  }
+
+  // ===== corpo: um ou vários quadros =====
+  var totalLinhas=0;
+  perfisParaMostrar.forEach(function(p){
+    var r=tabelaPerfil(p, verTodos); // no modo todos, mostra o título de cada quadro
+    if(r.linhas.length){ html2+=r.html; totalLinhas+=r.linhas.length; }
+  });
+  if(totalLinhas===0){
+    html2+='<div class="empty">Nenhuma folha com lançamentos para este filtro.</div>';
+  } else {
+    html2+='<div class="help">Clique na linha para abrir a folha · ✔ OK = RN revisado pelo GV · ! = justificativa pendente'+(modoDet?'':' · Use "Detalhado" para ver todos os KPIs')+'</div>';
+  }
+
+  // ===== BLOCO DE FERISTAS =====
   if(fsFerista.length){
     var fo=(DB.feristaObs||{})[mes]||{};
     html2+='<div class="card" style="border:2px solid var(--amber)"><h2 style="color:var(--amber)">🔄 Feristas / Reserva · '+mesLabel(mes)+'<span class="fill"></span><span style="font-size:12px;color:var(--mut);font-weight:600">'+fsFerista.length+' RN(s) — fora do ranking</span></h2>';
@@ -911,7 +908,6 @@ function pgConsolidado(el,u){
       }
       html2+='</div>';
     });
-    // total feristas
     var totFer=fsFerista.reduce(function(s,f){return s+(((fo[f.id]||{}).valor)||0);},0);
     html2+='<div style="text-align:right;font-weight:800;font-family:\'Archivo\';color:var(--navy);padding:8px 4px">Total feristas: '+(ocultar?'R$ ••••••':fmtBRL(totFer))+'</div>';
     html2+='</div>';
@@ -920,7 +916,7 @@ function pgConsolidado(el,u){
   html2+='</div>';
   el.innerHTML=html2;
 
-  // Listeners do bloco de feristas (valor + observação) com debounce
+  // listeners do bloco ferista
   el.querySelectorAll('[data-ferval]').forEach(function(inp){
     inp.addEventListener('change',function(){ salvarFerista(inp.getAttribute('data-ferval'),{valor:+inp.value||0}); });
   });
@@ -928,15 +924,14 @@ function pgConsolidado(el,u){
     var t=null;
     ta.addEventListener('input',function(){ clearTimeout(t); t=setTimeout(function(){ salvarFerista(ta.getAttribute('data-ferobs'),{obs:ta.value}); },700); });
   });
-  // Botões de status fora da tabela (no bloco ferista)
   el.querySelectorAll('[data-status]').forEach(function(b){
-    if(b.closest('#tbl-consol')) return; // os da tabela já são tratados pelo delegation
+    if(b.closest('.tbl-consol')) return;
     b.addEventListener('click',function(evt){ abrirStatus(b.getAttribute('data-status'),evt); });
   });
 
-  // Event delegation
-  var tbl=document.getElementById('tbl-consol');
-  if(tbl){
+  // event delegation em cada tabela de perfil
+  el.querySelectorAll('.tbl-consol').forEach(function(tbl){
+    tbl.style.cursor='pointer';
     tbl.addEventListener('click',function(evt){
       var chkBtn=evt.target.closest('[data-check]');
       if(chkBtn){toggleCheckRn(chkBtn.getAttribute('data-check'),evt);return;}
@@ -949,7 +944,7 @@ function pgConsolidado(el,u){
       var tr=evt.target.closest('tr[data-fid]');
       if(tr){go('folha',tr.getAttribute('data-fid'));}
     });
-  }
+  });
 }
 
 
@@ -1815,6 +1810,7 @@ onAuthStateChanged(auth, async firebaseUser => {
       return;
     }
     SESS = perfil;
+    window._hideValores = true; // abre com valores ocultos por padrão
     PAGE = 'consolidado'; PAGE_ARG = null;
     render();
   });
@@ -2113,6 +2109,7 @@ function resumoChecksOp(mes, opId){
 
 
 /* ===== OCULTAR/EXIBIR VALORES (privacidade em apresentações) ===== */
+function toggleDetalhe(){ PAGE_ARG=Object.assign({},PAGE_ARG||{},{det:!(PAGE_ARG&&PAGE_ARG.det)}); render(); }
 function toggleValores(){
   window._hideValores = !window._hideValores;
   render();
@@ -2499,7 +2496,7 @@ Object.assign(window, {
   doLogin, doLogout, go, render, renderCad, goSub, setFiltro, setFiltroN, setMes,
   setPerfil, setTetoMax, setTeto, setFolhaUser, cadFolhasSetOp, cadFolhasBusca,
   abrirJust, fecharJust, enviarJust, respJust, abrirPainelJust,
-  toggleCheckRn, toggleValores, limparDados, exportarRemuneracao,
+  toggleCheckRn, toggleValores, toggleDetalhe, limparDados, exportarRemuneracao,
   abrirStatus, setStatus, salvarFerista, statusTag, valorPago, minhaFolha, equipeFolhas, pgMinhaRem, selStatusTipo, salvarStatus, atualizarPreviewDias, atualizarPreviewNovo, comissaoCell, fatorDias, diasAusencia,
   darParecer, validarOp, reabrirOp,
   setLanc,
