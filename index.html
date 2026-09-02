@@ -202,10 +202,11 @@ const db  = getFirestore(app);
 
 
 /* ===== MAPA LOGIN → EMAIL (usado na tela de login) ===== */
-const LOGIN_MAP = {"leonardo": {"email": "leonardo@sisrem.local", "senha_hint": "071065"}, "rodrigo": {"email": "rodrigo@sisrem.local", "senha_hint": "077650"}, "robson": {"email": "robson@sisrem.local", "senha_hint": "082950"}, "leandro": {"email": "leandro@sisrem.local", "senha_hint": "064930"}, "gv1.mga": {"email": "gv1.mga@sisrem.local", "senha_hint": "008544"}, "gv2.mga": {"email": "gv2.mga@sisrem.local", "senha_hint": "326901"}, "gv3.mga": {"email": "gv3.mga@sisrem.local", "senha_hint": "049756"}, "gv4.mga": {"email": "gv4.mga@sisrem.local", "senha_hint": "031150"}, "gv1.gpv": {"email": "gv1.gpv@sisrem.local", "senha_hint": "087128"}, "gv2.gpv": {"email": "gv2.gpv@sisrem.local", "senha_hint": "044118"}, "gv1.pg": {"email": "gv1.pg@sisrem.local", "senha_hint": "060851"}, "gv2.pg": {"email": "gv2.pg@sisrem.local", "senha_hint": "021640"}, "gv3.pg": {"email": "gv3.pg@sisrem.local", "senha_hint": "023936"}, "gv1.np": {"email": "gv1.np@sisrem.local", "senha_hint": "085777"}};
+const LOGIN_MAP = {"leonardo": {"email": "leonardo@sisrem.local", "senha_hint": "071065"}, "rodrigo": {"email": "rodrigo@sisrem.local", "senha_hint": "077650"}, "robson": {"email": "robson@sisrem.local", "senha_hint": "082950"}, "leandro": {"email": "leandro@sisrem.local", "senha_hint": "064930"}, "gv1.mga": {"email": "gv1.mga@sisrem.local", "senha_hint": "008544"}, "gv2.mga": {"email": "gv2.mga@sisrem.local", "senha_hint": "326901"}, "gv3.mga": {"email": "gv3.mga@sisrem.local", "senha_hint": "049756"}, "gv4.mga": {"email": "gv4.mga@sisrem.local", "senha_hint": "031150"}, "gv1.gpv": {"email": "gv1.gpv@sisrem.local", "senha_hint": "087128"}, "gv2.gpv": {"email": "gv2.gpv@sisrem.local", "senha_hint": "067751"}, "gv1.pg": {"email": "gv1.pg@sisrem.local", "senha_hint": "060851"}, "gv2.pg": {"email": "gv2.pg@sisrem.local", "senha_hint": "021640"}, "gv3.pg": {"email": "gv3.pg@sisrem.local", "senha_hint": "023936"}, "gv1.np": {"email": "gv1.np@sisrem.local", "senha_hint": "085777"}};
 
 /* ===== GLOBALS ===== */
 let DB = null, SESS = null, PAGE = 'consolidado', PAGE_ARG = null;
+let FILTROS_CONSOL = {perfil:'todos', op:'todas', gv:'todos', det:false}; // filtros preservados do consolidado
 let _unsub = null; // listener Firestore ativo
 
 /* ===== UTILS ===== */
@@ -381,7 +382,7 @@ async function initSeed(){
     config:{mesRef:'2026-07'},
     meses:{'2026-07':{dUteis:23,dRealiz:23,nUteis:7}},
     operacoes:[{"id": 1, "nome": "Maringá", "gc": "robson@sisrem.local"}, {"id": 2, "nome": "Guarapuava", "gc": "leandro@sisrem.local"}, {"id": 3, "nome": "Ponta Grossa", "gc": "leandro@sisrem.local"}, {"id": 4, "nome": "Norte Pioneiro", "gc": "robson@sisrem.local"}],
-            usuarios:[{"id": "leonardo@sisrem.local", "login": "leonardo", "email": "leonardo@sisrem.local", "nome": "Leonardo", "papel": "admin", "ops": [], "setores": ""}, {"id": "rodrigo@sisrem.local", "login": "rodrigo", "email": "rodrigo@sisrem.local", "nome": "Rodrigo", "papel": "admin", "ops": [], "setores": ""}, {"id": "robson@sisrem.local", "login": "robson", "email": "robson@sisrem.local", "nome": "Robson", "papel": "gc", "ops": [1, 4], "setores": ""}, {"id": "leandro@sisrem.local", "login": "leandro", "email": "leandro@sisrem.local", "nome": "Leandro", "papel": "gc", "ops": [2, 3], "setores": ""}, {"id": "gv1.mga@sisrem.local", "login": "gv1.mga", "email": "gv1.mga@sisrem.local", "nome": "Anderson", "papel": "gv", "ops": [1], "setores": "101,102,103,104,105,106,107,108,109,121,122,123"}, {"id": "gv2.mga@sisrem.local", "login": "gv2.mga", "email": "gv2.mga@sisrem.local", "nome": "Ronaldo", "papel": "gv", "ops": [1], "setores": "201,202,203,204,205,206,207,208,209,210,211"}, {"id": "gv3.mga@sisrem.local", "login": "gv3.mga", "email": "gv3.mga@sisrem.local", "nome": "Reginaldo", "papel": "gv", "ops": [1], "setores": "301,302,303,304,305,306,307,308,309,310"}, {"id": "gv4.mga@sisrem.local", "login": "gv4.mga", "email": "gv4.mga@sisrem.local", "nome": "Fernando", "papel": "gv", "ops": [1], "setores": "401,402,403,404,405,406,407,408,411,421"}, {"id": "gv1.gpv@sisrem.local", "login": "gv1.gpv", "email": "gv1.gpv@sisrem.local", "nome": "Danilo", "papel": "gv", "ops": [2], "setores": "101,102,103,104,105,106,107,108,109,110,111,112,121"}, {"id": "gv2.gpv@sisrem.local", "login": "gv2.gpv", "email": "gv2.gpv@sisrem.local", "nome": "Cleverson", "papel": "gv", "ops": [2], "setores": "201,202,203,204,205,206,211"}, {"id": "gv1.pg@sisrem.local", "login": "gv1.pg", "email": "gv1.pg@sisrem.local", "nome": "Priscila", "papel": "gv", "ops": [3], "setores": "101,102,103,104,105,106,107,108,121"}, {"id": "gv2.pg@sisrem.local", "login": "gv2.pg", "email": "gv2.pg@sisrem.local", "nome": "Alexandre", "papel": "gv", "ops": [3], "setores": "201,202,203,204,205,206,207,221"}, {"id": "gv3.pg@sisrem.local", "login": "gv3.pg", "email": "gv3.pg@sisrem.local", "nome": "Mauro", "papel": "gv", "ops": [3], "setores": "301,302,303,304,305,306,307,308"}, {"id": "gv1.np@sisrem.local", "login": "gv1.np", "email": "gv1.np@sisrem.local", "nome": "Luiz Felipe", "papel": "gv", "ops": [4], "setores": "101,102,103,104,105,106,107,108,121,122,123,131"}],
+            usuarios:[{"id": "leonardo@sisrem.local", "login": "leonardo", "email": "leonardo@sisrem.local", "nome": "Leonardo", "papel": "admin", "ops": [], "setores": ""}, {"id": "rodrigo@sisrem.local", "login": "rodrigo", "email": "rodrigo@sisrem.local", "nome": "Rodrigo", "papel": "admin", "ops": [], "setores": ""}, {"id": "robson@sisrem.local", "login": "robson", "email": "robson@sisrem.local", "nome": "Robson", "papel": "gc", "ops": [1, 4], "setores": ""}, {"id": "leandro@sisrem.local", "login": "leandro", "email": "leandro@sisrem.local", "nome": "Leandro", "papel": "gc", "ops": [2, 3], "setores": ""}, {"id": "gv1.mga@sisrem.local", "login": "gv1.mga", "email": "gv1.mga@sisrem.local", "nome": "Anderson", "papel": "gv", "ops": [1], "setores": "101,102,103,104,105,106,107,108,109,121,122,123"}, {"id": "gv2.mga@sisrem.local", "login": "gv2.mga", "email": "gv2.mga@sisrem.local", "nome": "Ronaldo", "papel": "gv", "ops": [1], "setores": "201,202,203,204,205,206,207,208,209,210,211"}, {"id": "gv3.mga@sisrem.local", "login": "gv3.mga", "email": "gv3.mga@sisrem.local", "nome": "Reginaldo", "papel": "gv", "ops": [1], "setores": "301,302,303,304,305,306,307,308,309,310"}, {"id": "gv4.mga@sisrem.local", "login": "gv4.mga", "email": "gv4.mga@sisrem.local", "nome": "Fernando", "papel": "gv", "ops": [1], "setores": "401,402,403,404,405,406,407,408,411,421"}, {"id": "gv1.gpv@sisrem.local", "login": "gv1.gpv", "email": "gv1.gpv@sisrem.local", "nome": "Danilo", "papel": "gv", "ops": [2], "setores": "101,102,103,104,105,106,107,108,109,110,111,112,121"}, {"id": "gv2.gpv@sisrem.local", "login": "gv2.gpv", "email": "gv2.gpv@sisrem.local", "nome": "Edilson", "papel": "gv", "ops": [2], "setores": "201,202,203,204,205,206,211"}, {"id": "gv1.pg@sisrem.local", "login": "gv1.pg", "email": "gv1.pg@sisrem.local", "nome": "Priscila", "papel": "gv", "ops": [3], "setores": "101,102,103,104,105,106,107,108,121"}, {"id": "gv2.pg@sisrem.local", "login": "gv2.pg", "email": "gv2.pg@sisrem.local", "nome": "Alexandre", "papel": "gv", "ops": [3], "setores": "201,202,203,204,205,206,207,221"}, {"id": "gv3.pg@sisrem.local", "login": "gv3.pg", "email": "gv3.pg@sisrem.local", "nome": "Mauro", "papel": "gv", "ops": [3], "setores": "301,302,303,304,305,306,307,308"}, {"id": "gv1.np@sisrem.local", "login": "gv1.np", "email": "gv1.np@sisrem.local", "nome": "Luiz Felipe", "papel": "gv", "ops": [4], "setores": "101,102,103,104,105,106,107,108,121,122,123,131"}],
         perfis:[{"id": "rn_on", "nome": "RN ON TRADE", "kpis": [{"k": "CERV TOTAL", "peso": 20, "cat": "Volume"}, {"k": "HIGH END", "peso": 15, "cat": "Volume"}, {"k": "TASKS TOTAIS", "peso": 30, "cat": "Performance"}, {"k": "TASK ROTINA", "peso": 15, "cat": "Performance"}, {"k": "POSITIVAÇÃO SCANNTECH", "peso": 10, "cat": "Performance"}, {"k": "GMV MKTPLACE", "peso": 10, "cat": "Performance"}]}, {"id": "rn_off", "nome": "RN OFF TRADE", "kpis": [{"k": "CERV TOTAL", "peso": 15, "cat": "Volume"}, {"k": "NAB", "peso": 10, "cat": "Volume"}, {"k": "HIGH END", "peso": 15, "cat": "Volume"}, {"k": "GMV MKTPLACE", "peso": 10, "cat": "Volume"}, {"k": "TASKS TOTAIS", "peso": 30, "cat": "Performance"}, {"k": "TASK ROTINA", "peso": 10, "cat": "Performance"}, {"k": "POSITIVAÇÃO SCANNTECH", "peso": 10, "cat": "Performance"}]}, {"id": "rn_contas", "nome": "RN CONTAS", "kpis": [{"k": "CERV TOTAL", "peso": 20, "cat": "Volume"}, {"k": "HIGH END", "peso": 20, "cat": "Volume"}, {"k": "GMV MKTPLACE", "peso": 20, "cat": "Performance"}, {"k": "TASKS TOTAIS", "peso": 25, "cat": "Performance"}, {"k": "TASK ROTINA", "peso": 15, "cat": "Performance"}]}, {"id": "rn_reserva", "nome": "RN RESERVA / FERISTA", "kpis": [{"k": "DIAS TRABALHADOS", "peso": 40, "cat": "Performance"}, {"k": "TASKS TOTAIS", "peso": 30, "cat": "Performance"}, {"k": "CERV TOTAL", "peso": 20, "cat": "Volume"}, {"k": "HIGH END", "peso": 10, "cat": "Volume"}]}],
         folhas:[{"id": "1_101", "tipo": "RN", "setor": "101", "op": 1, "nome": "WILLIAN FRANCO FERREIRA DE SOUSA", "perfil": "rn_on", "base": 1000}, {"id": "1_102", "tipo": "RN", "setor": "102", "op": 1, "nome": "JOSE EMERSON SILVA DE LIMA", "perfil": "rn_on", "base": 1000}, {"id": "1_103", "tipo": "RN", "setor": "103", "op": 1, "nome": "JULIO CARLOS GOETTLICH RIGONATO", "perfil": "rn_on", "base": 1000}, {"id": "1_104", "tipo": "RN", "setor": "104", "op": 1, "nome": "ANA CAROLINE DE MATTOS", "perfil": "rn_on", "base": 1000}, {"id": "1_105", "tipo": "RN", "setor": "105", "op": 1, "nome": "GABRIEL FERRARI PEREIRA", "perfil": "rn_on", "base": 1000}, {"id": "1_106", "tipo": "RN", "setor": "106", "op": 1, "nome": "GILMAR HUMBERTO BRAS ZUFFA", "perfil": "rn_on", "base": 1000}, {"id": "1_107", "tipo": "RN", "setor": "107", "op": 1, "nome": "GABRIEL HENRIQUE FERREIRA", "perfil": "rn_on", "base": 1000}, {"id": "1_108", "tipo": "RN", "setor": "108", "op": 1, "nome": "JHONATAN EDWARD NERY DOS SANTOS", "perfil": "rn_on", "base": 1000}, {"id": "1_109", "tipo": "RN", "setor": "109", "op": 1, "nome": "MARCO ANTONIO MOURA BARBOSA", "perfil": "rn_on", "base": 1000}, {"id": "1_121", "tipo": "RN", "setor": "121", "op": 1, "nome": "LUCAS FERREIRA DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "1_122", "tipo": "RN", "setor": "122", "op": 1, "nome": "HIGOR DIEGO APARECIDO JACINTHO", "perfil": "rn_on", "base": 1000}, {"id": "1_123", "tipo": "RN", "setor": "123", "op": 1, "nome": "ANDRE DAS FLORES SOUZA", "perfil": "rn_on", "base": 1000}, {"id": "1_201", "tipo": "RN", "setor": "201", "op": 1, "nome": "RONALDO CESAR ROCHA", "perfil": "rn_on", "base": 1000}, {"id": "1_202", "tipo": "RN", "setor": "202", "op": 1, "nome": "SIDNEI BOZA", "perfil": "rn_on", "base": 1000}, {"id": "1_203", "tipo": "RN", "setor": "203", "op": 1, "nome": "TIAGO DONATO BERNARDES", "perfil": "rn_on", "base": 1000}, {"id": "1_204", "tipo": "RN", "setor": "204", "op": 1, "nome": "LUAN PAIS DOS SANTOS", "perfil": "rn_on", "base": 1000}, {"id": "1_205", "tipo": "RN", "setor": "205", "op": 1, "nome": "WILLIANS MAILLON DE BRITO", "perfil": "rn_on", "base": 1000}, {"id": "1_206", "tipo": "RN", "setor": "206", "op": 1, "nome": "ANTONIO SERGIO FRANCO", "perfil": "rn_on", "base": 1000}, {"id": "1_207", "tipo": "RN", "setor": "207", "op": 1, "nome": "EVERTON TEIXEIRA DOS SANTOS", "perfil": "rn_on", "base": 1000}, {"id": "1_208", "tipo": "RN", "setor": "208", "op": 1, "nome": "CAIO AUGUSTO CORONADO COLOMBAR", "perfil": "rn_on", "base": 1000}, {"id": "1_209", "tipo": "RN", "setor": "209", "op": 1, "nome": "VAGO", "perfil": "rn_on", "base": 1000}, {"id": "1_210", "tipo": "RN", "setor": "210", "op": 1, "nome": "WILLIAM ROGER FERNANDES", "perfil": "rn_on", "base": 1000}, {"id": "1_211", "tipo": "RN", "setor": "211", "op": 1, "nome": "VALTER DIAS TURATO", "perfil": "rn_on", "base": 1000}, {"id": "1_301", "tipo": "RN", "setor": "301", "op": 1, "nome": "TIAGO DOS SANTOS GALVAO", "perfil": "rn_on", "base": 1000}, {"id": "1_302", "tipo": "RN", "setor": "302", "op": 1, "nome": "VAGNER LEANDRO DOS SANTOS ROSA", "perfil": "rn_on", "base": 1000}, {"id": "1_303", "tipo": "RN", "setor": "303", "op": 1, "nome": "MURILO CESAR DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "1_304", "tipo": "RN", "setor": "304", "op": 1, "nome": "WELLINGTON CAMARGO DO NASCIMENTO", "perfil": "rn_on", "base": 1000}, {"id": "1_305", "tipo": "RN", "setor": "305", "op": 1, "nome": "OSMAR NUNES DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "1_306", "tipo": "RN", "setor": "306", "op": 1, "nome": "RONAN HENRIQUE PIRES RENAU", "perfil": "rn_on", "base": 1000}, {"id": "1_307", "tipo": "RN", "setor": "307", "op": 1, "nome": "REGINALDO RIBEIRO DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "1_308", "tipo": "RN", "setor": "308", "op": 1, "nome": "ANGELO AUGUSTO PEREIRA DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "1_309", "tipo": "RN", "setor": "309", "op": 1, "nome": "BRUNO TORRES BATISTA DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "1_310", "tipo": "RN", "setor": "310", "op": 1, "nome": "FABIO JOSE DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "1_401", "tipo": "RN", "setor": "401", "op": 1, "nome": "FAGNER DE SOUZA", "perfil": "rn_off", "base": 1000}, {"id": "1_402", "tipo": "RN", "setor": "402", "op": 1, "nome": "SERGIO JOAO ARANEGA", "perfil": "rn_off", "base": 1000}, {"id": "1_403", "tipo": "RN", "setor": "403", "op": 1, "nome": "TIAGO FERNANDES REIS CANONIO", "perfil": "rn_off", "base": 1000}, {"id": "1_404", "tipo": "RN", "setor": "404", "op": 1, "nome": "LUCIANO SILVA CID", "perfil": "rn_off", "base": 1000}, {"id": "1_405", "tipo": "RN", "setor": "405", "op": 1, "nome": "OSMAR FERREIRA DUTRA", "perfil": "rn_off", "base": 1000}, {"id": "1_406", "tipo": "RN", "setor": "406", "op": 1, "nome": "FABIANO FOGACA MACHADO", "perfil": "rn_off", "base": 1000}, {"id": "1_407", "tipo": "RN", "setor": "407", "op": 1, "nome": "ODONIAS SANTOS DE SOUZA", "perfil": "rn_off", "base": 1000}, {"id": "1_408", "tipo": "RN", "setor": "408", "op": 1, "nome": "JULIANO NUNES GARCIA", "perfil": "rn_off", "base": 1000}, {"id": "1_411", "tipo": "RN", "setor": "411", "op": 1, "nome": "JEAN CARLOS COELHO DA SILVA", "perfil": "rn_off", "base": 1000}, {"id": "1_421", "tipo": "RN", "setor": "421", "op": 1, "nome": "JONATHAN VIRLEI RUAS", "perfil": "rn_contas", "base": 1000}, {"id": "2_101", "tipo": "RN", "setor": "101", "op": 2, "nome": "RUI MARCOS DOS SANTOS", "perfil": "rn_on", "base": 1000}, {"id": "2_102", "tipo": "RN", "setor": "102", "op": 2, "nome": "LUCAS GABRIEL MORAIS FERREIRA", "perfil": "rn_on", "base": 1000}, {"id": "2_103", "tipo": "RN", "setor": "103", "op": 2, "nome": "GELSON PADILHA JUNIOR", "perfil": "rn_on", "base": 1000}, {"id": "2_104", "tipo": "RN", "setor": "104", "op": 2, "nome": "JOSI KARIELI DE SOUZA HECKLER", "perfil": "rn_on", "base": 1000}, {"id": "2_105", "tipo": "RN", "setor": "105", "op": 2, "nome": "THIAGO DE OLIVEIRA FERREIRA", "perfil": "rn_on", "base": 1000}, {"id": "2_106", "tipo": "RN", "setor": "106", "op": 2, "nome": "JUAN RODRIGUES RIBEIRO", "perfil": "rn_on", "base": 1000}, {"id": "2_107", "tipo": "RN", "setor": "107", "op": 2, "nome": "ELIAS ANDREI SABATOVSKI", "perfil": "rn_on", "base": 1000}, {"id": "2_108", "tipo": "RN", "setor": "108", "op": 2, "nome": "FERNANDO BORGES DOS SANTOS", "perfil": "rn_on", "base": 1000}, {"id": "2_109", "tipo": "RN", "setor": "109", "op": 2, "nome": "JOSE FELIPE DE SOUZA FERNANDES", "perfil": "rn_on", "base": 1000}, {"id": "2_110", "tipo": "RN", "setor": "110", "op": 2, "nome": "MICHEL ANTONIO MEDINO", "perfil": "rn_on", "base": 1000}, {"id": "2_111", "tipo": "RN", "setor": "111", "op": 2, "nome": "CRISTIANO GONZALES DA SILVA", "perfil": "rn_on", "base": 1000}, {"id": "2_112", "tipo": "RN", "setor": "112", "op": 2, "nome": "SANDERSON DA SILVA VINHARSKI", "perfil": "rn_on", "base": 1000}, {"id": "2_121", "tipo": "RN", "setor": "121", "op": 2, "nome": "BRUNO EDUARDO", "perfil": "rn_on", "base": 1000}, {"id": "2_201", "tipo": "RN", "setor": "201", "op": 2, "nome": "TONI DA SILVA GLUSZCZAK", "perfil": "rn_off", "base": 1000}, {"id": "2_202", "tipo": "RN", "setor": "202", "op": 2, "nome": "JULIANO FERREIRA PEREIRA", "perfil": "rn_off", "base": 1000}, {"id": "2_203", "tipo": "RN", "setor": "203", "op": 2, "nome": "JANAINNA IZADORA PIRES", "perfil": "rn_off", "base": 1000}, {"id": "2_204", "tipo": "RN", "setor": "204", "op": 2, "nome": "DEIVDY BORGES PEREIRA", "perfil": "rn_off", "base": 1000}, {"id": "2_205", "tipo": "RN", "setor": "205", "op": 2, "nome": "VANDERSON MARQUES CORDEIRO", "perfil": "rn_off", "base": 1000}, {"id": "2_206", "tipo": "RN", "setor": "206", "op": 2, "nome": "JOAO PEDRO SANTOS", "perfil": "rn_contas", "base": 1000}, {"id": "2_211", "tipo": "RN", "setor": "211", "op": 2, "nome": "EDILSON SIERPINSKI IVANISKI", "perfil": "rn_contas", "base": 1000}, {"id": "3_101", "tipo": "RN", "setor": "101", "op": 3, "nome": "GIELSON LARA DO PRADO", "perfil": "rn_on", "base": 1000}, {"id": "3_102", "tipo": "RN", "setor": "102", "op": 3, "nome": "WESLEY RAPHAEL MANCE MALINOSCKY", "perfil": "rn_on", "base": 1000}, {"id": "3_103", "tipo": "RN", "setor": "103", "op": 3, "nome": "AYSLAN LUCAS FOGACA GONCALVES", "perfil": "rn_on", "base": 1000}, {"id": "3_104", "tipo": "RN", "setor": "104", "op": 3, "nome": "ALEX MARTINS DE ALMEIDA ROCHA", "perfil": "rn_on", "base": 1000}, {"id": "3_105", "tipo": "RN", "setor": "105", "op": 3, "nome": "JEVERSON DEIVID DE SOUZA", "perfil": "rn_on", "base": 1000}, {"id": "3_106", "tipo": "RN", "setor": "106", "op": 3, "nome": "LUAN HENRIQUE DE DEUS DOS SANTOS", "perfil": "rn_on", "base": 1000}, {"id": "3_107", "tipo": "RN", "setor": "107", "op": 3, "nome": "LUCAS DA LUZ GOMES", "perfil": "rn_on", "base": 1000}, {"id": "3_108", "tipo": "RN", "setor": "108", "op": 3, "nome": "JOELMA TEIXEIRA IANSEN", "perfil": "rn_on", "base": 1000}, {"id": "3_121", "tipo": "RN", "setor": "121", "op": 3, "nome": "ALEX FELIPE MOTA", "perfil": "rn_on", "base": 1000}, {"id": "3_201", "tipo": "RN", "setor": "201", "op": 3, "nome": "LEANDRO VINICIUS DUTRA", "perfil": "rn_off", "base": 1000}, {"id": "3_202", "tipo": "RN", "setor": "202", "op": 3, "nome": "THIAGO NOGUEIRA RODRIGUES", "perfil": "rn_off", "base": 1000}, {"id": "3_203", "tipo": "RN", "setor": "203", "op": 3, "nome": "FRANCIS COUTO FALBO", "perfil": "rn_off", "base": 1000}, {"id": "3_204", "tipo": "RN", "setor": "204", "op": 3, "nome": "ISABELA ZAMBAO MEIRA", "perfil": "rn_off", "base": 1000}, {"id": "3_205", "tipo": "RN", "setor": "205", "op": 3, "nome": "ARNALDO GIELINSKI GABRE", "perfil": "rn_off", "base": 1000}, {"id": "3_206", "tipo": "RN", "setor": "206", "op": 3, "nome": "MARCIO MACHADO TAQUES", "perfil": "rn_off", "base": 1000}, {"id": "3_207", "tipo": "RN", "setor": "207", "op": 3, "nome": "ALANE DOS SANTOS PINTO", "perfil": "rn_off", "base": 1000}, {"id": "3_221", "tipo": "RN", "setor": "221", "op": 3, "nome": "FABIO PROCOPIO DOS SANTOS", "perfil": "rn_off", "base": 1000}, {"id": "3_301", "tipo": "RN", "setor": "301", "op": 3, "nome": "ELIAS FERREIRA JUNIOR", "perfil": "rn_on", "base": 1000}, {"id": "3_302", "tipo": "RN", "setor": "302", "op": 3, "nome": "JACKSON PAVILAKI DO NASCIMENTO", "perfil": "rn_on", "base": 1000}, {"id": "3_303", "tipo": "RN", "setor": "303", "op": 3, "nome": "EDUARDO HENRIQUE FERREIRA ALVES", "perfil": "rn_on", "base": 1000}, {"id": "3_304", "tipo": "RN", "setor": "304", "op": 3, "nome": "FLAVIA PEREK FERREIRA DA LUZ", "perfil": "rn_on", "base": 1000}, {"id": "3_305", "tipo": "RN", "setor": "305", "op": 3, "nome": "KARINE SANTOS PINTO", "perfil": "rn_on", "base": 1000}, {"id": "3_306", "tipo": "RN", "setor": "306", "op": 3, "nome": "CHARLES FEREZIN DE SOUZA", "perfil": "rn_on", "base": 1000}, {"id": "3_307", "tipo": "RN", "setor": "307", "op": 3, "nome": "MARISA APARECIDA LEMES MACHADO", "perfil": "rn_on", "base": 1000}, {"id": "3_308", "tipo": "RN", "setor": "308", "op": 3, "nome": "GABRIEL DOS SANTOS FERREIRA", "perfil": "rn_on", "base": 1000}, {"id": "4_101", "tipo": "RN", "setor": "101", "op": 4, "nome": "MARCELO INOCENCIO AMARAL", "perfil": "rn_on", "base": 1000}, {"id": "4_102", "tipo": "RN", "setor": "102", "op": 4, "nome": "LUCAS MATHEUS OLIVEIRA", "perfil": "rn_on", "base": 1000}, {"id": "4_103", "tipo": "RN", "setor": "103", "op": 4, "nome": "FELIPE SOARES DOS SANTOS", "perfil": "rn_on", "base": 1000}, {"id": "4_104", "tipo": "RN", "setor": "104", "op": 4, "nome": "JONATAS LEONARDO FERREIRA DE MELO", "perfil": "rn_on", "base": 1000}, {"id": "4_105", "tipo": "RN", "setor": "105", "op": 4, "nome": "FAGNER BITTENCOUT EVANGELISTA", "perfil": "rn_on", "base": 1000}, {"id": "4_106", "tipo": "RN", "setor": "106", "op": 4, "nome": "DIOGO RAFAEL LIMA", "perfil": "rn_on", "base": 1000}, {"id": "4_107", "tipo": "RN", "setor": "107", "op": 4, "nome": "RODRIGO VALGRANDE", "perfil": "rn_on", "base": 1000}, {"id": "4_108", "tipo": "RN", "setor": "108", "op": 4, "nome": "MARCIO DIAS", "perfil": "rn_on", "base": 1000}, {"id": "4_121", "tipo": "RN", "setor": "121", "op": 4, "nome": "JEFFERSON HERIBERTO BIANCHI", "perfil": "rn_off", "base": 1000}, {"id": "4_122", "tipo": "RN", "setor": "122", "op": 4, "nome": "TANCREDO APARECIDO DE SOUZA", "perfil": "rn_off", "base": 1000}, {"id": "4_123", "tipo": "RN", "setor": "123", "op": 4, "nome": "VAGO NP", "perfil": "rn_off", "base": 1000}, {"id": "4_131", "tipo": "RN", "setor": "131", "op": 4, "nome": "JOAO RENATO DE OLIVEIRA RODRIGUES", "perfil": "rn_contas", "base": 1000}],
     lanc:{'2026-07':{
@@ -404,7 +405,7 @@ async function initSeed(){
 /* ===== MIGRAÇÃO v2: logins padronizados por operação ===== */
 const MIGRA_V2 = {"leonardo@sisrem.local": "leonardo@sisrem.local", "rodrigo@sisrem.local": "rodrigo@sisrem.local", "robson@sisrem.local": "robson@sisrem.local", "leandro@sisrem.local": "leandro@sisrem.local", "anderson@sisrem.local": "gv1.mga@sisrem.local", "ronaldo@sisrem.local": "gv2.mga@sisrem.local", "reginaldo@sisrem.local": "gv3.mga@sisrem.local", "fernando@sisrem.local": "gv4.mga@sisrem.local", "danilo@sisrem.local": "gv1.gpv@sisrem.local", "cleverson@sisrem.local": "gv2.gpv@sisrem.local", "priscila@sisrem.local": "gv1.pg@sisrem.local", "alexandre@sisrem.local": "gv2.pg@sisrem.local", "mauro@sisrem.local": "gv3.pg@sisrem.local", "luiz.felipe@sisrem.local": "gv1.np@sisrem.local"};
 const LOGIN_POR_EMAIL = {"leonardo@sisrem.local": "leonardo", "rodrigo@sisrem.local": "rodrigo", "robson@sisrem.local": "robson", "leandro@sisrem.local": "leandro", "gv1.mga@sisrem.local": "gv1.mga", "gv2.mga@sisrem.local": "gv2.mga", "gv3.mga@sisrem.local": "gv3.mga", "gv4.mga@sisrem.local": "gv4.mga", "gv1.gpv@sisrem.local": "gv1.gpv", "gv2.gpv@sisrem.local": "gv2.gpv", "gv1.pg@sisrem.local": "gv1.pg", "gv2.pg@sisrem.local": "gv2.pg", "gv3.pg@sisrem.local": "gv3.pg", "gv1.np@sisrem.local": "gv1.np"};
-const NOME_POR_EMAIL = {"leonardo@sisrem.local": "Leonardo", "rodrigo@sisrem.local": "Rodrigo", "robson@sisrem.local": "Robson", "leandro@sisrem.local": "Leandro", "gv1.mga@sisrem.local": "Anderson", "gv2.mga@sisrem.local": "Ronaldo", "gv3.mga@sisrem.local": "Reginaldo", "gv4.mga@sisrem.local": "Fernando", "gv1.gpv@sisrem.local": "Danilo", "gv2.gpv@sisrem.local": "Cleverson", "gv1.pg@sisrem.local": "Priscila", "gv2.pg@sisrem.local": "Alexandre", "gv3.pg@sisrem.local": "Mauro", "gv1.np@sisrem.local": "Luiz Felipe"};
+const NOME_POR_EMAIL = {"leonardo@sisrem.local": "Leonardo", "rodrigo@sisrem.local": "Rodrigo", "robson@sisrem.local": "Robson", "leandro@sisrem.local": "Leandro", "gv1.mga@sisrem.local": "Anderson", "gv2.mga@sisrem.local": "Ronaldo", "gv3.mga@sisrem.local": "Reginaldo", "gv4.mga@sisrem.local": "Fernando", "gv1.gpv@sisrem.local": "Danilo", "gv2.gpv@sisrem.local": "Edilson", "gv1.pg@sisrem.local": "Priscila", "gv2.pg@sisrem.local": "Alexandre", "gv3.pg@sisrem.local": "Mauro", "gv1.np@sisrem.local": "Luiz Felipe"};
 
 async function migrarV2(){
   if((DB.versao||1) >= 2) return false;
@@ -657,13 +658,13 @@ function gvDaFolha(f){
 function pgConsolidado(el,u){
   const mes=DB.config.mesRef, perfis=DB.perfis;
   var perfisRN0=DB.perfis.filter(function(x){return !/^g[vc]\b|^g[vc]\s|gerente/i.test(x.nome);});
-  var perfilSel=(PAGE_ARG&&PAGE_ARG.perfil!=null)?PAGE_ARG.perfil:'todos';
+  var perfilSel=(FILTROS_CONSOL.perfil!=null)?FILTROS_CONSOL.perfil:'todos';
   if(perfilSel!=='todos' && !perfisRN0.some(function(x){return x.id===perfilSel;})) perfilSel='todos';
   var verTodos=(perfilSel==='todos');
-  const opsU=userOps(u), opSel=(PAGE_ARG&&PAGE_ARG.op!=null)?PAGE_ARG.op:'todas';
-  const gvSel=(PAGE_ARG&&PAGE_ARG.gv!=null)?PAGE_ARG.gv:'todos';
+  const opsU=userOps(u), opSel=(FILTROS_CONSOL.op!=null)?FILTROS_CONSOL.op:'todas';
+  const gvSel=(FILTROS_CONSOL.gv!=null)?FILTROS_CONSOL.gv:'todos';
   // modo de exibição: 'resumido' (padrão) ou 'detalhado' (todos os KPIs)
-  var modoDet=(PAGE_ARG&&PAGE_ARG.det)?true:false;
+  var modoDet=!!FILTROS_CONSOL.det;
 
   const ehFerista=function(f){return f.perfil==='rn_reserva'||f.reserva||!f.setor||String(f.setor).trim()==='';};
   const podeJustificar=u.papel==='gv'||u.papel==='gc';
@@ -1046,7 +1047,7 @@ function pgConsolidadoGV(el,u){
   // todas as folhas de perfil gerente
   var folhasGV=(DB.folhas||[]).filter(function(f){return ehPerfilGerente(f.perfil);});
   // filtro de operação
-  var opSel=(PAGE_ARG&&PAGE_ARG.op!=null)?PAGE_ARG.op:'todas';
+  var opSel=(FILTROS_CONSOL.op!=null)?FILTROS_CONSOL.op:'todas';
   var fs=folhasGV.slice();
   if(opSel!=='todas') fs=fs.filter(function(f){return f.op===+opSel;});
 
@@ -1257,8 +1258,8 @@ function reabrirOp(op){
 /* ===== LANÇAMENTOS ===== */
 function pgLanc(el,u){
   const mes=DB.config.mesRef;
-  const opSel=(PAGE_ARG&&PAGE_ARG.op!=null)?PAGE_ARG.op:(DB.operacoes[0]?DB.operacoes[0].id:1);
-  const perfilSel=(PAGE_ARG&&PAGE_ARG.perfil)||(DB.perfis[0]&&DB.perfis[0].id);
+  const opSel=(FILTROS_CONSOL.op!=null&&FILTROS_CONSOL.op!=='todas')?FILTROS_CONSOL.op:(DB.operacoes[0]?DB.operacoes[0].id:1);
+  const perfilSel=(FILTROS_CONSOL.perfil&&FILTROS_CONSOL.perfil!=='todos')?FILTROS_CONSOL.perfil:(DB.perfis[0]&&DB.perfis[0].id);
   const p=DB.perfis.find(x=>x.id===perfilSel);
   const fechado=(DB.fechamento[mes]||{})[opSel]==='validado';
   const fs=DB.folhas.filter(f=>f.op===+opSel&&f.perfil===perfilSel).sort((a,b)=>a.setor.localeCompare(b.setor));
@@ -1300,7 +1301,7 @@ function setLanc(fid,kpi,campo,val){
 
 /* ===== IMPORTAR EXCEL ===== */
 function pgImportar(el,u){
-  const perfilSel=(PAGE_ARG&&PAGE_ARG.perfil)||(DB.perfis[0]&&DB.perfis[0].id);
+  const perfilSel=(FILTROS_CONSOL.perfil&&FILTROS_CONSOL.perfil!=='todos')?FILTROS_CONSOL.perfil:(DB.perfis[0]&&DB.perfis[0].id);
   el.innerHTML=`<div class="card">
     <h2>Importar Excel · ${mesLabel(DB.config.mesRef)}<span class="fill"></span>
       <select onchange="setFiltro('perfil',this.value)">
@@ -1642,11 +1643,13 @@ function cadUsuarios(el){
   <div class="tbl-wrap" style="margin-top:14px"><table class="data">
     <thead><tr><th style="text-align:left">E-mail</th><th style="text-align:left">Nome</th><th>Papel</th><th>Ops</th><th>Setores</th><th></th></tr></thead>
     <tbody>${DB.usuarios.map(us=>`<tr>
-      <td class="l"><b>${esc(us.id)}</b></td><td class="l">${esc(us.nome)}</td>
+      <td class="l"><b>${esc(us.id)}</b></td>
+      <td class="l"><input value="${esc(us.nome)}" style="width:180px" onchange="setUserNome('${us.id}',this.value)" title="Editar nome"></td>
       <td>${us.papel==='admin'?'Admin':us.papel==='gc'?'GC':'GV'}</td>
       <td>${(us.ops||[]).join(', ')||'—'}</td><td>${esc(us.setores||'todos')}</td>
       <td>${us.id!==SESS.id?`<button class="btn danger sm" onclick="delUsuario('${us.id}')">Excluir</button>`:''}</td>
-    </tr>`).join('')}</tbody></table></div>`;
+    </tr>`).join('')}</tbody></table></div>
+  <div class="help" style="margin-top:8px">💡 Para trocar o <b>nome</b> de um usuário (ex.: novo gerente no mesmo cargo), edite direto na coluna Nome. A senha continua sendo alterada no Firebase.</div>`;
 }
 function addUsuario(){
   const id=$('#nu_id').value.trim().toLowerCase();
@@ -1654,6 +1657,20 @@ function addUsuario(){
   const ops=$('#nu_ops').value.split(',').map(s=>+s.trim()).filter(Boolean);
   DB.usuarios.push({id,email:id,nome:$('#nu_nome').value.trim()||id,papel:$('#nu_papel').value,ops,setores:$('#nu_set').value.trim()});
   persistConfig();renderCad();toast('Perfil de usuário criado. Crie a conta no Firebase Authentication!');
+}
+function setUserNome(id,nome){
+  const u=DB.usuarios.find(x=>x.id===id);
+  if(!u) return;
+  const novo=(nome||'').trim();
+  if(!novo){ toast('O nome não pode ficar vazio.'); renderCad(); return; }
+  u.nome=novo;
+  // atualizar também a folha de gerente vinculada, se houver
+  const fg=DB.folhas.find(f=>f.userId===id);
+  if(fg && /^g[vc]\b|^g[vc]\s|gerente/i.test((perfilDe(fg)||{}).nome||'')){
+    fg.nome=novo.toUpperCase();
+  }
+  persistConfig();
+  toast('Nome atualizado para '+novo);
 }
 function delUsuario(id){
   if(!confirm('Excluir perfil de '+id+'?'))return;
@@ -1811,6 +1828,7 @@ onAuthStateChanged(auth, async firebaseUser => {
     }
     SESS = perfil;
     window._hideValores = true; // abre com valores ocultos por padrão
+    FILTROS_CONSOL = {perfil:'todos', op:'todas', gv:'todos', det:false}; // reseta filtros no login
     PAGE = 'consolidado'; PAGE_ARG = null;
     render();
   });
@@ -1820,12 +1838,12 @@ onAuthStateChanged(auth, async firebaseUser => {
 /* ===== HELPERS PARA ONCLICKS (PAGE_ARG não é global acessível em onclick) ===== */
 function goSub(sub){ PAGE_ARG={sub}; render(); }
 function setFiltro(campo, val){
-  PAGE_ARG=Object.assign({}, PAGE_ARG||{}, {[campo]:val});
+  FILTROS_CONSOL[campo]=val;
   // trocar operação limpa o filtro de GV (evita GV fora da operação)
-  if(campo==='op') PAGE_ARG.gv='todos';
+  if(campo==='op') FILTROS_CONSOL.gv='todos';
   render();
 }
-function setFiltroN(campo, val){ PAGE_ARG=Object.assign({}, PAGE_ARG||{}, {[campo]:+val}); render(); }
+function setFiltroN(campo, val){ FILTROS_CONSOL[campo]=+val; render(); }
 function setMes(val){ DB.config.mesRef=val; persistConfig(); carregarLanc(val).then(render); }
 
 
@@ -2109,7 +2127,7 @@ function resumoChecksOp(mes, opId){
 
 
 /* ===== OCULTAR/EXIBIR VALORES (privacidade em apresentações) ===== */
-function toggleDetalhe(){ PAGE_ARG=Object.assign({},PAGE_ARG||{},{det:!(PAGE_ARG&&PAGE_ARG.det)}); render(); }
+function toggleDetalhe(){ FILTROS_CONSOL.det=!FILTROS_CONSOL.det; render(); }
 function toggleValores(){
   window._hideValores = !window._hideValores;
   render();
@@ -2504,7 +2522,7 @@ Object.assign(window, {
   cadFolhas, cadPerfis, cadUsuarios, cadOps,
   addFolha, delFolha, setBase,
   addPerfil, delPerfil, renKPI, setPeso, setCat, delKPI, addKPI,
-  addUsuario, delUsuario,
+  addUsuario, delUsuario, setUserNome,
   setOpNome:(id,v)=>{opDe(id).nome=v;persistConfig();},
   setOpGC:(id,v)=>{opDe(id).gc=v;persistConfig();},
   setCfgMes, novoMes, exportarJSON, importarJSON,
