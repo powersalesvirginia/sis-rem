@@ -166,6 +166,28 @@ table.data tr.click{cursor:pointer}
 .ferista-card{background:#FFFBEB;border:1px solid var(--amber);border-radius:10px;padding:12px 14px;margin-bottom:10px}
 .ferista-card textarea{width:100%;min-height:44px;resize:vertical;font-size:13px;margin-top:6px}
 
+/* ===== RESUMO & ANÁLISES ===== */
+.res-meses{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.res-mes{border:1px solid var(--line);background:#fff;color:var(--mut);border-radius:99px;padding:5px 11px;font-size:12px;font-weight:700}
+.res-mes.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.res-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px}
+.res-tile{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px;border-top:4px solid var(--yellow)}
+.res-tile.crit{border-top-color:var(--red)}
+.res-tile small{display:block;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.res-tile b{display:block;font-family:'Archivo';font-size:22px;color:var(--navy);margin:4px 0 2px}
+.res-tile span{font-size:11px;color:var(--mut)}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:0 18px}
+.res-kpi-row{display:grid;grid-template-columns:150px 1fr 150px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.res-kpi-nome{font-size:12px;font-weight:700;color:var(--navy)}
+.res-kpi-extra{font-size:11px;color:var(--mut);text-align:right;line-height:1.3}
+.res-kpi-extra span{font-size:10px}
+.res-bar{position:relative;height:22px;background:#F0F4F8;border-radius:4px;overflow:hidden}
+.res-bar-fill{height:100%;border-radius:0 4px 4px 0}
+.res-bar-fill.ok{background:var(--green)} .res-bar-fill.mid{background:var(--yellow)} .res-bar-fill.bad{background:var(--red)} .res-bar-fill.navy{background:var(--blue)}
+.res-bar-lbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:800;color:var(--ink);background:rgba(255,255,255,.85);padding:0 4px;border-radius:3px}
+tr.res-sel td{background:var(--yellow-soft)!important}
+@media(max-width:600px){.res-kpi-row{grid-template-columns:1fr 90px}.res-kpi-row .res-bar{grid-column:1/-1;grid-row:2}}
+
 @media print{
   header.app,nav.tabs,.no-print{display:none!important}
   body{background:#fff}
@@ -202,11 +224,14 @@ const db  = getFirestore(app);
 
 
 /* ===== MAPA LOGIN → EMAIL (usado na tela de login) ===== */
-const LOGIN_MAP = {"leonardo": {"email": "leonardo@sisrem.local", "senha_hint": "071065"}, "rodrigo": {"email": "rodrigo@sisrem.local", "senha_hint": "077650"}, "robson": {"email": "robson@sisrem.local", "senha_hint": "082950"}, "leandro": {"email": "leandro@sisrem.local", "senha_hint": "064930"}, "gv1.mga": {"email": "gv1.mga@sisrem.local", "senha_hint": "008544"}, "gv2.mga": {"email": "gv2.mga@sisrem.local", "senha_hint": "326901"}, "gv3.mga": {"email": "gv3.mga@sisrem.local", "senha_hint": "049756"}, "gv4.mga": {"email": "gv4.mga@sisrem.local", "senha_hint": "031150"}, "gv1.gpv": {"email": "gv1.gpv@sisrem.local", "senha_hint": "087128"}, "gv2.gpv": {"email": "gv2.gpv@sisrem.local", "senha_hint": "067751"}, "gv1.pg": {"email": "gv1.pg@sisrem.local", "senha_hint": "060851"}, "gv2.pg": {"email": "gv2.pg@sisrem.local", "senha_hint": "021640"}, "gv3.pg": {"email": "gv3.pg@sisrem.local", "senha_hint": "023936"}, "gv1.np": {"email": "gv1.np@sisrem.local", "senha_hint": "085777"}};
+const LOGIN_MAP = {"leonardo": {"email": "leonardo@sisrem.local", "senha_hint": "071065"}, "rodrigo": {"email": "rodrigo@sisrem.local", "senha_hint": "077650"}, "robson": {"email": "robson@sisrem.local", "senha_hint": "082950"}, "leandro": {"email": "leandro@sisrem.local", "senha_hint": "064930"}, "gv1.mga": {"email": "gv1.mga@sisrem.local", "senha_hint": "008544"}, "gv2.mga": {"email": "gv2.mga@sisrem.local", "senha_hint": "326901"}, "gv3.mga": {"email": "gv3.mga@sisrem.local", "senha_hint": "049756"}, "gv4.mga": {"email": "gv4.mga@sisrem.local", "senha_hint": "031150"}, "gv1.gpv": {"email": "gv1.gpv@sisrem.local", "senha_hint": "087128"}, "gv2.gpv": {"email": "gv2.gpv@sisrem.local", "senha_hint": "067751"}, "gv1.pg": {"email": "gv1.pg@sisrem.local", "senha_hint": "060851"}, "gv2.pg": {"email": "gv2.pg@sisrem.local", "senha_hint": "021640"}, "gv3.pg": {"email": "gv3.pg@sisrem.local", "senha_hint": "023936"}, "gv1.np": {"email": "gv1.np@sisrem.local", "senha_hint": "085777"}, "gg": {"email": "gg@sisrem.local", "pwSufixo": "rh"}, "geovana": {"email": "geovana@sisrem.local"}};
+/* Usuários fixos que não dependem do cadastro no Firestore (RH = somente consulta) */
+const USUARIOS_FIXOS = [{"id": "gg@sisrem.local", "login": "gg", "email": "gg@sisrem.local", "nome": "RH", "papel": "rh", "ops": [], "setores": ""}, {"id": "geovana@sisrem.local", "login": "geovana", "email": "geovana@sisrem.local", "nome": "Geovana", "papel": "rh", "ops": [], "setores": ""}];
 
 /* ===== GLOBALS ===== */
 let DB = null, SESS = null, PAGE = 'consolidado', PAGE_ARG = null;
 let FILTROS_CONSOL = {perfil:'todos', op:'todas', gv:'todos', det:false}; // filtros preservados do consolidado
+let RES_FILTROS = null, _resCarregado = false; // filtros e cache da tela Resumo & Análises
 let _unsub = null; // listener Firestore ativo
 
 /* ===== UTILS ===== */
@@ -240,6 +265,8 @@ const DOC_VALID   = () => doc(db,'sisrem','valid');
 let _persistTimer = null;
 async function persist(partes){
   // partes = array de 'config'|'lanc'|'valid' — se omitido, salva tudo
+  // Usuário de consulta (RH) nunca grava nada no banco
+  if(ehRH(SESS)){ toast('Acesso somente para consulta: nada foi alterado.'); return; }
   const salvar = partes || ['config','lanc','valid'];
   try{
     const proms = [];
@@ -257,7 +284,8 @@ async function persist(partes){
     if(salvar.includes('lanc')){
       proms.push(setDoc(DOC_LANC(), {
         mes:  DB.config.mesRef,
-        lanc: (DB.lanc||{})[DB.config.mesRef]||{}
+        lanc: (DB.lanc||{})[DB.config.mesRef]||{},
+        nomes: carimbarNomes(DB.config.mesRef) // quem estava em cada folha/setor neste mês
       }));
     }
     if(salvar.includes('valid')){
@@ -286,6 +314,39 @@ async function carregarLanc(mes){
   const snap = await getDoc(DOC_LANC(mes));
   DB.lanc = DB.lanc || {};
   DB.lanc[mes] = snap.exists() ? (snap.data().lanc||{}) : {};
+  DB.lancNomes = DB.lancNomes || {};
+  DB.lancNomes[mes] = snap.exists() ? (snap.data().nomes||{}) : {};
+}
+
+/* ===== HISTÓRICO DE NOMES POR MÊS =====
+ * A folha representa o setor; a pessoa no setor pode mudar de um mês para o outro.
+ * Cada documento lanc_AAAA-MM guarda em "nomes" quem estava em cada folha naquele mês.
+ */
+function ultimoMes(){ var ms=Object.keys(DB.meses||{}).sort(); return ms[ms.length-1]; }
+// O mês já tem registro de quem estava em cada setor? (meses anteriores a este recurso não têm)
+function mesTemRegistro(mes){ return Object.keys((DB.lancNomes||{})[mes]||{}).length>0; }
+// Nome da pessoa que ocupava a folha no mês.
+// - mês com registro: usa o registro (null = setor sem ninguém registrado naquele mês)
+// - mês sem registro (antigo): assume o ocupante atual do setor
+function nomeNoMes(f,mes){
+  var n=((DB.lancNomes||{})[mes]||{})[f.id];
+  if(n) return n;
+  if(mes===ultimoMes() || !mesTemRegistro(mes)) return f.nome;
+  return null;
+}
+// Ao salvar o mês mais recente, registra o nome atual das folhas que ainda não têm registro.
+// Meses antigos não são carimbados com o nome atual (seria o RN errado).
+function carimbarNomes(mes){
+  DB.lancNomes=DB.lancNomes||{};
+  var nm=DB.lancNomes[mes]=DB.lancNomes[mes]||{};
+  if(mes===ultimoMes()){
+    Object.keys((DB.lanc||{})[mes]||{}).forEach(function(fid){
+      if(nm[fid]) return;
+      var f=(DB.folhas||[]).find(function(x){return x.id===fid;});
+      if(f&&f.nome) nm[fid]=f.nome;
+    });
+  }
+  return nm;
 }
 
 let _unsubConfig=null, _unsubValid=null;
@@ -300,6 +361,7 @@ function subscribeDB(callback){
   let _firstConfig=true, _firstValid=true;
   DB = DB||{};
   DB.lanc = {};
+  DB.lancNomes = {};
 
   function checkReady(){
     if(configOk && validOk && lancOk) callback();
@@ -484,7 +546,8 @@ var STATUS_INFO={ferias:{cls:'ferias',lbl:'FÉRIAS'},atestado:{cls:'atestado',lb
 /* ===== DOMÍNIO ===== */
 const perfilDe = f => DB.perfis.find(p=>p.id===f.perfil);
 const opDe = id => DB.operacoes.find(o=>o.id===+id);
-const userOps = u => u.papel==='admin'?DB.operacoes.map(o=>o.id):(u.ops||[]);
+const ehRH = u => !!u && u.papel==='rh';
+const userOps = u => (u.papel==='admin'||u.papel==='rh')?DB.operacoes.map(o=>o.id):(u.ops||[]);
 function folhasVisiveis(u){
   const ops=userOps(u);
   let fs=DB.folhas.filter(f=>ops.includes(f.op));
@@ -552,6 +615,12 @@ const arrow=a=>a>=90?'<span class="arrow-up">▲</span>':a>=80?'<span class="arr
 
 /* ===== SHELL & NAV ===== */
 function navFor(u){
+  // RH: somente consulta — remuneração de RNs e gerentes + resumo/análises
+  if(ehRH(u)){
+    var tr=[['resumo','Resumo & Análises'],['consolidado','Consolidado RNs']];
+    if((DB.folhas||[]).some(function(f){return ehPerfilGerente(f.perfil);})) tr.push(['consolgv','Consolidado GV']);
+    return tr;
+  }
   const t=[['consolidado','Consolidado']];
   // Consolidado GV: admin vê todos os gerentes; aba logo após o consolidado de RNs
   if(u.papel==='admin'){
@@ -563,6 +632,7 @@ function navFor(u){
   if(u.papel==='gv'||u.papel==='gc'){
     if(minhaFolha(u)||equipeFolhas(u).length) t.splice(1,0,['minha','Minha Remuneração']);
   }
+  if(u.papel==='admin')t.push(['resumo','Resumo & Análises']);
   if(u.papel==='admin')t.push(['lanc','Lançamentos'],['importar','Importar Excel'],['cadastros','Cadastros'],['config','Config & Backup']);
   t.push(['senha','Minha senha']);
   return t;
@@ -570,6 +640,8 @@ function navFor(u){
 function render(){
   if(!SESS||!DB){renderLogin();return;}
   const u=SESS, meses=Object.keys(DB.meses).sort();
+  // RH (consulta) só acessa as telas de leitura
+  if(ehRH(u) && ['resumo','consolidado','consolgv','folha'].indexOf(PAGE)<0) PAGE='resumo';
   document.getElementById('root').innerHTML=`
   <header class="app">
     <div class="brand-mark">R$</div>
@@ -578,17 +650,21 @@ function render(){
     <select onchange="setMes(this.value)">
       ${meses.map(m=>`<option value="${m}" ${m===DB.config.mesRef?'selected':''}>${mesLabel(m)}</option>`).join('')}
     </select>
-    <div class="userchip"><div><b>${esc(u.nome)}</b><small>${u.papel==='admin'?'Administrador':u.papel==='gc'?'Gerente Comercial':'Gerente de Vendas'}</small></div></div>
+    <div class="userchip"><div><b>${esc(u.nome)}</b><small>${u.papel==='admin'?'Administrador':u.papel==='rh'?'RH · Consulta':u.papel==='gc'?'Gerente Comercial':'Gerente de Vendas'}</small></div></div>
     <button class="btn ghost sm" style="color:#fff;border-color:rgba(255,255,255,.35)" onclick="doLogout()">Sair</button>
   </header>
   <nav class="tabs">
     ${navFor(u).map(([id,l])=>`<button class="${PAGE===id?'on':''}" onclick="go('${id}')">${l}</button>`).join('')}
   </nav>
   <main id="main"></main>`;
-  const P={consolidado:pgConsolidado,consolgv:pgConsolidadoGV,folha:pgFolha,minha:pgMinhaRem,validacao:pgValidacao,lanc:pgLanc,importar:pgImportar,cadastros:pgCadastros,config:pgConfig,senha:pgSenha};
+  const P={resumo:pgResumo,consolidado:pgConsolidado,consolgv:pgConsolidadoGV,folha:pgFolha,minha:pgMinhaRem,validacao:pgValidacao,lanc:pgLanc,importar:pgImportar,cadastros:pgCadastros,config:pgConfig,senha:pgSenha};
   (P[PAGE]||pgConsolidado)($('#main'),u);
 }
-function go(p,arg){PAGE=p;PAGE_ARG=arg??null;render();window.scrollTo(0,0);}
+function go(p,arg){
+  if(p==='folha' && PAGE!=='folha') window._voltarPara=PAGE;
+  if(p==='resumo' && PAGE!=='resumo' && PAGE!=='folha') _resCarregado=false; // recarrega os meses ao entrar
+  PAGE=p;PAGE_ARG=arg??null;render();window.scrollTo(0,0);
+}
 
 /* Re-renderiza só o conteúdo da aba de cadastro ativa, sem mudar PAGE */
 function renderCad(){
@@ -624,7 +700,8 @@ async function doLogin(){
   if(!entry){ renderLogin(); $('#lerr').textContent='Usuário não encontrado.'; return; }
   try{
     loading('Autenticando…');
-    await signInWithEmailAndPassword(auth, entry.email, pw);
+    // Firebase exige senha com 6+ caracteres: logins com senha curta recebem um sufixo fixo
+    await signInWithEmailAndPassword(auth, entry.email, pw+(entry.pwSufixo||''));
   }catch(e){
     renderLogin();
     $('#lerr').textContent = e.code==='auth/invalid-credential'?'Usuário ou senha inválidos.':e.message;
@@ -705,10 +782,11 @@ function pgConsolidado(el,u){
   var btnOlho='<button class="btn ghost sm" onclick="toggleValores()" title="'+(ocultar?'Exibir valores':'Ocultar valores')+'" style="font-size:16px;padding:6px 10px">'+(ocultar?'🙈':'👁')+'</button>';
   var btnDet='<button class="btn '+(modoDet?'':'ghost')+' sm" onclick="toggleDetalhe()" title="Ver todos os KPIs ou só o resumo">'+(modoDet?'📊 Detalhado':'📋 Resumido')+'</button>';
 
+  var somenteLeitura=ehRH(u);
   var html2='<div class="card"><h2>Consolidado · '+mesLabel(mes)+'<span class="fill"></span>'+btnOlho+btnDet+btnPend+
     '<select onchange="setFiltro(\'perfil\',this.value)">'+optsPerf+'</select>'+
     '<select onchange="setFiltro(\'op\',this.value)">'+optsOp+'</select>'+
-    ((ehAdmin||u.papel==='gc')?'<select onchange="setFiltro(\'gv\',this.value)">'+optsGv+'</select>':'')+'</h2>';
+    ((ehAdmin||u.papel==='gc'||somenteLeitura)?'<select onchange="setFiltro(\'gv\',this.value)">'+optsGv+'</select>':'')+'</h2>';
 
   // aviso quando valores ocultos
   if(ocultar){
@@ -779,7 +857,7 @@ function pgConsolidado(el,u){
 
       rows+='<tr data-fid="'+fid+'"'+(chkOk&&!ehAdmin?' style="opacity:.85"':'')+'>'+
         '<td><b>'+x.f.op+'_'+esc(x.f.setor)+'</b></td>'+
-        '<td class="l">'+esc(x.f.nome)+statusTag(fid)+' <button class="rn-status-btn" data-status="'+fid+'" title="Marcar Férias / Atestado / Novo">⚑</button></td>'+
+        '<td class="l">'+esc(nomeNoMes(x.f,mes)||x.f.nome)+statusTag(fid)+(somenteLeitura?'':' <button class="rn-status-btn" data-status="'+fid+'" title="Marcar Férias / Atestado / Novo">⚑</button>')+'</td>'+
         kpiCells+
         '<td class="'+classTotal(x.c.atingTotal)+'" data-fid="'+fid+'">'+fmtPct(x.c.atingTotal)+'</td>'+
         '<td data-fid="'+fid+'">'+arrow(x.c.atingTotal)+'</td>'+
@@ -882,7 +960,7 @@ function pgConsolidado(el,u){
   if(fsFerista.length){
     var fo=(DB.feristaObs||{})[mes]||{};
     html2+='<div class="card" style="border:2px solid var(--amber)"><h2 style="color:var(--amber)">🔄 Feristas / Reserva · '+mesLabel(mes)+'<span class="fill"></span><span style="font-size:12px;color:var(--mut);font-weight:600">'+fsFerista.length+' RN(s) — fora do ranking</span></h2>';
-    html2+='<div class="help" style="margin-bottom:12px">Substitutos da operação. Escreva a observação e informe o valor a pagar manualmente. Não entram no ranking nem nas médias.</div>';
+    html2+='<div class="help" style="margin-bottom:12px">'+(somenteLeitura?'Substitutos da operação. Valor informado manualmente pelo gestor. Não entram no ranking nem nas médias.':'Substitutos da operação. Escreva a observação e informe o valor a pagar manualmente. Não entram no ranking nem nas médias.')+'</div>';
     fsFerista.forEach(function(f){
       var reg=fo[f.id]||{obs:'',valor:0};
       var opNome=opDe(f.op)?opDe(f.op).nome:f.op;
@@ -891,12 +969,20 @@ function pgConsolidado(el,u){
       html2+='<span style="background:var(--amber);color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">FERISTA</span>';
       html2+='<b style="font-size:14px">'+esc(f.nome)+'</b>';
       html2+='<span style="color:var(--mut);font-size:12px">Op. '+f.op+' — '+esc(opNome)+'</span>';
+      if(somenteLeitura){
+        html2+=statusTag(f.id)+'<span class="fill"></span>';
+        html2+='<div class="fld" style="margin:0"><label style="font-size:10px">Valor a pagar (R$)</label>';
+        html2+='<b style="font-family:\'Archivo\';font-size:15px;text-align:right">'+(ocultar?'R$ ••••':fmtBRL(+reg.valor||0))+'</b></div>';
+        html2+='</div>';
+        html2+='<div style="margin-top:6px;font-size:13px;white-space:pre-wrap">'+(reg.obs?esc(reg.obs):'<span style="color:var(--mut)">Sem observação.</span>')+'</div>';
+      } else {
       html2+=statusTag(f.id)+' <button class="rn-status-btn" data-status="'+f.id+'">⚑ status</button>';
       html2+='<span class="fill"></span>';
       html2+='<div class="fld" style="margin:0"><label style="font-size:10px">Valor a pagar (R$)</label>';
       html2+='<input type="number" step="0.01" value="'+(reg.valor||0)+'" style="width:130px;text-align:right;font-weight:700" data-ferval="'+f.id+'"></div>';
       html2+='</div>';
       html2+='<textarea placeholder="Observação (ex: cobriu setor 105 por 12 dias, férias do titular...)" data-ferobs="'+f.id+'">'+esc(reg.obs||'')+'</textarea>';
+      }
       if(reg.userName){
         var papelLbl=reg.userPapel==='admin'?'Admin':reg.userPapel==='gc'?'GC':reg.userPapel==='gv'?'GV':'';
         html2+='<div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:var(--mut);background:#F0F4F8;border-radius:6px;padding:5px 10px;width:fit-content">';
@@ -1116,18 +1202,400 @@ function pgConsolidadoGV(el,u){
   }
 }
 
+/* ===== RESUMO & ANÁLISES (RH / admin) =====
+ * Junta vários meses: remuneração por vendedor, médias e itens (KPIs) mais críticos.
+ * Só leitura — não grava nada no banco.
+ ============================================= */
+function resTipoFolha(f){
+  if(ehPerfilGerente(f.perfil)) return 'gv';
+  if(f.perfil==='rn_reserva'||f.reserva||!f.setor||String(f.setor).trim()==='') return 'ferista';
+  return 'rn';
+}
+function resFiltrosPadrao(){
+  return {meses:Object.keys(DB.meses||{}).sort(), op:'todas', tipo:'rn', perfil:'todos', busca:'', ordem:'media_desc', vend:null};
+}
+function setResFiltro(campo,val){
+  RES_FILTROS[campo]=val;
+  if(campo==='tipo') RES_FILTROS.perfil='todos';
+  if(campo!=='vend') RES_FILTROS.vend=null;
+  render();
+}
+var _resBuscaT=null;
+function setResBusca(val){
+  clearTimeout(_resBuscaT);
+  _resBuscaT=setTimeout(function(){
+    RES_FILTROS.busca=val; RES_FILTROS.vend=null; render();
+    var inp=document.getElementById('res_busca');
+    if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length,inp.value.length); }
+  },300);
+}
+function toggleResMes(m){
+  var a=RES_FILTROS.meses, i=a.indexOf(m);
+  if(i>=0){ if(a.length===1){ toast('Deixe pelo menos um mês selecionado.'); return; } a.splice(i,1); }
+  else { a.push(m); a.sort(); }
+  render();
+}
+function setResMeses(qual){
+  var todos=Object.keys(DB.meses||{}).sort();
+  RES_FILTROS.meses = qual==='todos' ? todos : todos.slice(-(+qual));
+  render();
+}
+function abrirResVend(fid){
+  RES_FILTROS.vend = RES_FILTROS.vend===fid ? null : fid;
+  render();
+  if(RES_FILTROS.vend){ var d=document.getElementById('res_detalhe'); if(d) d.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+
+// Resultado de UMA folha em UM mês (null = sem lançamento no mês)
+function resLinhaMes(f,mes){
+  var tipo=resTipoFolha(f);
+  if(tipo==='ferista'){
+    var fo=((DB.feristaObs||{})[mes]||{})[f.id];
+    if(!fo||!(+fo.valor)) return null;
+    return {mes:mes, pago:+fo.valor, ating:null, itens:[], status:null};
+  }
+  var lanc=(DB.lanc[mes]||{})[f.id];
+  if(!lanc||!Object.keys(lanc).length) return null;
+  var ant=DB.config.mesRef, c, v, st;
+  DB.config.mesRef=mes; // valorPago/statusDoRN usam o mês de referência
+  try{ c=calcFolha(f,mes); if(c){ v=valorPago(f.id,c.total,f.base||0); st=statusDoRN(f.id); } }
+  finally{ DB.config.mesRef=ant; }
+  if(!c) return null;
+  var itens=c.itens.filter(function(i){return i.ating!=null;}).map(function(i){
+    return {k:i.k, nk:normKPI(i.k), ating:i.ating, peso:i.peso, gap:i.ating<100?i.vItem*(100-i.ating)/100:0};
+  });
+  if(!itens.length) return null;
+  return {mes:mes, pago:v.pago, ating:c.atingTotal, itens:itens, status:st};
+}
+
+// Agrega atingimento por KPI de um conjunto de itens [{k,nk,ating,gap}]
+function resKpiAgg(itens){
+  var m={};
+  itens.forEach(function(i){
+    var a=m[i.nk]||(m[i.nk]={k:i.k, soma:0, n:0, abaixo:0, gap:0});
+    a.soma+=i.ating; a.n++; if(i.ating<100) a.abaixo++; a.gap+=i.gap;
+  });
+  return Object.keys(m).map(function(nk){var a=m[nk]; return {k:a.k, media:a.soma/a.n, n:a.n, pctAbaixo:a.abaixo/a.n*100, gap:a.gap};})
+    .sort(function(a,b){return a.media-b.media;});
+}
+function resPior(itens){ var r=resKpiAgg(itens); return r.length?r[0]:null; }
+
+function resMesCurto(m){ var n=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ']; var p=m.split('-'); return n[+p[1]-1]+'/'+p[0].slice(2); }
+
+// Monta o conjunto de dados filtrado
+function resChavePessoa(nome,f){
+  var n=normKPI(nome);
+  // setor vago / sem nome definido não é uma pessoa: fica separado por folha
+  if(/^vago\b|^setor\s/.test(n)) return 'folha:'+f.id;
+  return 'p:'+n;
+}
+// Monta o conjunto de dados filtrado — agrupado pela PESSOA (nome no mês), não pelo setor
+function resDados(){
+  var F=RES_FILTROS, busca=normKPI(F.busca||'');
+  var pessoas={}, ordem=[];
+  (DB.folhas||[]).forEach(function(f){
+    var t=resTipoFolha(f);
+    if(F.tipo!=='todos' && t!==F.tipo) return;
+    if(F.op!=='todas' && f.op!==+F.op) return;
+    if(F.perfil!=='todos' && f.perfil!==F.perfil) return;
+    F.meses.forEach(function(m){
+      var nome=nomeNoMes(f,m);
+      if(!nome) return; // mês sem registro de quem estava no setor: fica em branco
+      if(busca && normKPI(nome).indexOf(busca)<0) return;
+      var r=resLinhaMes(f,m); if(!r) return;
+      r.f=f;
+      var k=resChavePessoa(nome,f);
+      var p=pessoas[k]; if(!p){ p=pessoas[k]={key:k, nome:nome, porMes:{}}; ordem.push(k); }
+      var ja=p.porMes[m];
+      if(ja){ // mesma pessoa em duas folhas no mesmo mês: soma o valor
+        ja.pago+=r.pago; ja.itens=ja.itens.concat(r.itens);
+        if(r.ating!=null) ja.ating=ja.ating!=null?(ja.ating+r.ating)/2:r.ating;
+      } else p.porMes[m]=r;
+    });
+  });
+  var vend=[];
+  ordem.forEach(function(k){
+    var p=pessoas[k];
+    var meses=F.meses.filter(function(m){return p.porMes[m];});
+    var lista=meses.map(function(m){return p.porMes[m];});
+    var ult=lista[lista.length-1];
+    var itens=[]; lista.forEach(function(r){ itens=itens.concat(r.itens); });
+    var comAting=lista.filter(function(r){return r.ating!=null;});
+    var total=lista.reduce(function(s,r){return s+r.pago;},0);
+    var setores=[]; lista.forEach(function(r){ var sx=r.f.op+(r.f.setor?'_'+r.f.setor:''); if(setores[setores.length-1]!==sx) setores.push(sx); });
+    vend.push({
+      key:k, nome:ult.f&&nomeNoMes(ult.f,meses[meses.length-1])||p.nome, f:ult.f, setores:setores,
+      atual:normKPI(ult.f.nome)===normKPI(p.nome), // é o ocupante atual da folha?
+      tipo:resTipoFolha(ult.f), porMes:p.porMes, n:lista.length, itens:itens,
+      total:total, mediaPago:total/lista.length,
+      mediaAting:comAting.length?comAting.reduce(function(s,r){return s+r.ating;},0)/comAting.length:null,
+      primAting:comAting.length?comAting[0].ating:null, ultAting:comAting.length?comAting[comAting.length-1].ating:null,
+      pior:resPior(itens)
+    });
+  });
+  return vend;
+}
+
+function resBarra(pct, max, cls, rotulo, titulo){
+  var w=Math.max(0,Math.min(100,(pct||0)/max*100));
+  return '<div class="res-bar" title="'+esc(titulo||'')+'"><div class="res-bar-fill '+cls+'" style="width:'+w+'%"></div><span class="res-bar-lbl">'+rotulo+'</span></div>';
+}
+function resClsAting(a){ return a==null?'':(a>=100?'ok':a>=90?'mid':'bad'); }
+
+function pgResumo(el,u){
+  if(!RES_FILTROS) RES_FILTROS=resFiltrosPadrao();
+  var todosMeses=Object.keys(DB.meses||{}).sort();
+  RES_FILTROS.meses=RES_FILTROS.meses.filter(function(m){return todosMeses.indexOf(m)>=0;});
+  if(!RES_FILTROS.meses.length) RES_FILTROS.meses=todosMeses.slice();
+
+  // carrega os lançamentos de todos os meses (uma vez por entrada na tela)
+  if(!_resCarregado){
+    el.innerHTML='<div class="card empty">Carregando os lançamentos de '+todosMeses.length+' mês(es)…</div>';
+    Promise.all(todosMeses.map(function(m){ return m===DB.config.mesRef&&DB.lanc[m]?null:carregarLanc(m); }))
+      .then(function(){ _resCarregado=true; if(PAGE==='resumo') render(); })
+      .catch(function(e){ el.innerHTML='<div class="card empty">Erro ao carregar meses: '+esc(e.message)+'</div>'; });
+    return;
+  }
+
+  var F=RES_FILTROS, ocultar=!!window._hideValores;
+  var R=function(v){ return ocultar?'R$ ••••':fmtBRL(v); };
+  var vend=resDados();
+
+  // ---------- filtros ----------
+  var optsOp='<option value="todas">Todas as operações</option>'+DB.operacoes.map(function(o){return '<option value="'+o.id+'" '+(''+o.id===''+F.op?'selected':'')+'>'+o.id+' — '+esc(o.nome)+'</option>';}).join('');
+  var tipos=[['rn','Vendedores (RNs)'],['gv','Gerentes de Vendas'],['ferista','Feristas / Reserva'],['todos','Todos']];
+  var optsTipo=tipos.map(function(t){return '<option value="'+t[0]+'" '+(F.tipo===t[0]?'selected':'')+'>'+t[1]+'</option>';}).join('');
+  var perfisTipo=(DB.perfis||[]).filter(function(p){
+    var ger=ehPerfilGerente(p.id);
+    if(F.tipo==='gv') return ger; if(F.tipo==='rn') return !ger&&p.id!=='rn_reserva'; if(F.tipo==='ferista') return p.id==='rn_reserva';
+    return true;
+  });
+  var optsPerf='<option value="todos">Todos os perfis</option>'+perfisTipo.map(function(p){return '<option value="'+p.id+'" '+(F.perfil===p.id?'selected':'')+'>'+esc(p.nome)+'</option>';}).join('');
+  var optsOrd=[['media_desc','Maior média R$'],['media_asc','Menor média R$'],['ating_desc','Maior % ating.'],['ating_asc','Menor % ating.'],['nome','Nome (A-Z)'],['op','Operação / setor']]
+    .map(function(o){return '<option value="'+o[0]+'" '+(F.ordem===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('');
+  var btnOlho='<button class="btn ghost sm" onclick="toggleValores()" title="'+(ocultar?'Exibir':'Ocultar')+' valores" style="font-size:16px;padding:6px 10px">'+(ocultar?'🙈':'👁')+'</button>';
+
+  var h='<div class="card"><h2>Resumo & Análises<span class="fill"></span>'+btnOlho+
+    '<button class="btn ghost sm" onclick="exportarResumo()">⬇ Excel</button></h2>';
+  h+='<div class="row" style="margin-bottom:12px">'+
+    '<div class="fld"><label>Vendedor (nome)</label><input id="res_busca" placeholder="Digite o nome…" value="'+esc(F.busca)+'" oninput="setResBusca(this.value)" style="width:220px"></div>'+
+    '<div class="fld"><label>Tipo</label><select onchange="setResFiltro(\'tipo\',this.value)">'+optsTipo+'</select></div>'+
+    '<div class="fld"><label>Operação</label><select onchange="setResFiltro(\'op\',this.value)">'+optsOp+'</select></div>'+
+    '<div class="fld"><label>Perfil</label><select onchange="setResFiltro(\'perfil\',this.value)">'+optsPerf+'</select></div>'+
+    '<div class="fld"><label>Ordenar</label><select onchange="setResFiltro(\'ordem\',this.value)">'+optsOrd+'</select></div>'+
+  '</div>';
+  h+='<div class="fld"><label>Meses</label><div class="res-meses">'+
+    todosMeses.map(function(m){return '<button class="res-mes'+(F.meses.indexOf(m)>=0?' on':'')+'" onclick="toggleResMes(\''+m+'\')">'+resMesCurto(m)+'</button>';}).join('')+
+    '<span style="width:8px"></span>'+
+    '<button class="btn ghost sm" onclick="setResMeses(\'todos\')">Todos</button>'+
+    (todosMeses.length>3?'<button class="btn ghost sm" onclick="setResMeses(3)">Últimos 3</button>':'')+
+  '</div></div>';
+  if(ocultar) h+='<div style="background:var(--blue-soft);border-radius:8px;padding:8px 14px;margin-top:12px;font-size:12px;color:var(--navy)">🙈 Valores ocultos. Clique no botão 👁 acima para exibir.</div>';
+  h+='</div>';
+
+  if(!vend.length){
+    el.innerHTML=h+'<div class="card empty">Nenhum resultado com lançamento para estes filtros.</div>';
+    return;
+  }
+
+  // ---------- indicadores gerais ----------
+  var nVendMes=vend.reduce(function(s,v){return s+v.n;},0);
+  var totalGeral=vend.reduce(function(s,v){return s+v.total;},0);
+  var atings=[]; vend.forEach(function(v){ F.meses.forEach(function(m){ var r=v.porMes[m]; if(r&&r.ating!=null) atings.push(r.ating); }); });
+  var mediaAtingGeral=atings.length?atings.reduce(function(s,a){return s+a;},0)/atings.length:null;
+  var abaixo80=atings.filter(function(a){return a<80;}).length;
+  var todosItens=[]; vend.forEach(function(v){ todosItens=todosItens.concat(v.itens); });
+  var kpis=resKpiAgg(todosItens);
+
+  h+='<div class="res-tiles">'+
+    '<div class="res-tile"><small>Pessoas</small><b>'+vend.length+'</b><span>'+F.meses.length+' mês(es) no filtro</span></div>'+
+    '<div class="res-tile"><small>Remuneração total</small><b>'+R(totalGeral)+'</b><span>soma do período</span></div>'+
+    '<div class="res-tile"><small>Média por pessoa/mês</small><b>'+R(nVendMes?totalGeral/nVendMes:0)+'</b><span>'+nVendMes+' folha(s) no período</span></div>'+
+    '<div class="res-tile"><small>Média % atingimento</small><b>'+fmtPct(mediaAtingGeral)+'</b><span>'+(atings.length?abaixo80+' folha(s) abaixo de 80%':'sem KPIs')+'</span></div>'+
+    (kpis.length?'<div class="res-tile crit"><small>Item mais crítico</small><b style="font-size:16px">'+esc(kpis[0].k)+'</b><span>média '+fmtPct(kpis[0].media)+' · '+fmtN(kpis[0].pctAbaixo,0)+'% abaixo da meta</span></div>':'')+
+  '</div>';
+
+  // ---------- detalhe de um vendedor ----------
+  var sel=F.vend?vend.find(function(v){return v.key===F.vend;}):null;
+  if(sel) h+=resDetalheVend(sel,F,R);
+
+  // ---------- análises de KPIs ----------
+  if(kpis.length){
+    var maxK=Math.max(125,Math.max.apply(null,kpis.map(function(k){return k.media;})));
+    h+='<div class="res-grid">';
+    // ranking de KPIs
+    h+='<div class="card"><h2>Atingimento médio por item</h2><div class="help" style="margin:-6px 0 12px">Do pior para o melhor. "Não capturado" = quanto deixou de ser ganho por ficar abaixo de 100% no item.</div>';
+    kpis.forEach(function(k){
+      h+='<div class="res-kpi-row"><div class="res-kpi-nome">'+esc(k.k)+'</div>'+
+        resBarra(k.media,maxK,resClsAting(k.media),fmtPct(k.media),k.n+' lançamento(s) · '+fmtN(k.pctAbaixo,0)+'% abaixo da meta')+
+        '<div class="res-kpi-extra">'+fmtN(k.pctAbaixo,0)+'% abaixo<br><span>'+(ocultar?'R$ ••••':fmtBRL(k.gap))+' não capturado</span></div></div>';
+    });
+    h+='</div>';
+
+    // item crítico por mês e por operação
+    h+='<div class="card"><h2>Item mais crítico</h2>';
+    h+='<div class="kpi-sec">Por mês</div><div class="tbl-wrap"><table class="data"><thead><tr><th style="text-align:left">Mês</th><th style="text-align:left">Item</th><th>Média</th><th>% abaixo</th></tr></thead><tbody>';
+    F.meses.forEach(function(m){
+      var it=[]; vend.forEach(function(v){ var r=v.porMes[m]; if(r) it=it.concat(r.itens); });
+      var p=resPior(it);
+      h+='<tr><td class="l"><b>'+mesLabel(m)+'</b></td>'+(p?'<td class="l">'+esc(p.k)+'</td><td class="'+classAting(p.media)+'">'+fmtPct(p.media)+'</td><td>'+fmtN(p.pctAbaixo,0)+'%</td>':'<td class="l" colspan="3" style="color:var(--mut)">sem lançamentos</td>')+'</tr>';
+    });
+    h+='</tbody></table></div>';
+    h+='<div class="kpi-sec" style="margin-top:16px">Por operação</div><div class="tbl-wrap"><table class="data"><thead><tr><th style="text-align:left">Operação</th><th style="text-align:left">Item</th><th>Média</th><th>% abaixo</th></tr></thead><tbody>';
+    DB.operacoes.forEach(function(o){
+      var it=[]; vend.forEach(function(v){ if(v.f.op===o.id) it=it.concat(v.itens); });
+      if(!it.length) return;
+      var p=resPior(it);
+      h+='<tr><td class="l"><b>'+o.id+' — '+esc(o.nome)+'</b></td><td class="l">'+esc(p.k)+'</td><td class="'+classAting(p.media)+'">'+fmtPct(p.media)+'</td><td>'+fmtN(p.pctAbaixo,0)+'%</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+    h+='</div>';
+  }
+
+  // ---------- remuneração por operação e por mês ----------
+  var porOp=DB.operacoes.map(function(o){
+    var vs=vend.filter(function(v){return v.f.op===o.id;});
+    if(!vs.length) return null;
+    var tot=vs.reduce(function(s,v){return s+v.total;},0), n=vs.reduce(function(s,v){return s+v.n;},0);
+    var at=vs.map(function(v){return v.mediaAting;}).filter(function(a){return a!=null;});
+    return {o:o, pessoas:vs.length, total:tot, media:n?tot/n:0, ating:at.length?at.reduce(function(s,a){return s+a;},0)/at.length:null};
+  }).filter(Boolean);
+  var porMes=F.meses.map(function(m){
+    var rs=[]; vend.forEach(function(v){ if(v.porMes[m]) rs.push(v.porMes[m]); });
+    var tot=rs.reduce(function(s,r){return s+r.pago;},0);
+    var at=rs.filter(function(r){return r.ating!=null;}).map(function(r){return r.ating;});
+    return {m:m, n:rs.length, total:tot, media:rs.length?tot/rs.length:0, ating:at.length?at.reduce(function(s,a){return s+a;},0)/at.length:null};
+  });
+  var maxMedOp=Math.max.apply(null,porOp.map(function(x){return x.media;}).concat([1]));
+  var maxMedMes=Math.max.apply(null,porMes.map(function(x){return x.media;}).concat([1]));
+  h+='<div class="res-grid">';
+  h+='<div class="card"><h2>Média de remuneração por operação</h2><div class="tbl-wrap"><table class="data"><thead><tr><th style="text-align:left">Operação</th><th>Pessoas</th><th style="min-width:160px">Média R$ / mês</th><th>% Ating</th><th>Total</th></tr></thead><tbody>';
+  porOp.forEach(function(x){
+    h+='<tr><td class="l"><b>'+x.o.id+' — '+esc(x.o.nome)+'</b></td><td>'+x.pessoas+'</td><td>'+resBarra(x.media,maxMedOp,'navy',R(x.media),'')+'</td><td class="'+classAting(x.ating)+'">'+fmtPct(x.ating)+'</td><td style="text-align:right">'+R(x.total)+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+  h+='<div class="card"><h2>Evolução por mês</h2><div class="tbl-wrap"><table class="data"><thead><tr><th style="text-align:left">Mês</th><th>Pessoas</th><th style="min-width:160px">Média R$</th><th>% Ating</th><th>Total</th></tr></thead><tbody>';
+  porMes.forEach(function(x){
+    h+='<tr><td class="l"><b>'+mesLabel(x.m)+'</b></td><td>'+x.n+'</td><td>'+(x.n?resBarra(x.media,maxMedMes,'navy',R(x.media),''):'—')+'</td><td class="'+classAting(x.ating)+'">'+fmtPct(x.ating)+'</td><td style="text-align:right">'+R(x.total)+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+  h+='</div>';
+
+  // ---------- tabela por vendedor ----------
+  var ord={
+    media_desc:function(a,b){return b.mediaPago-a.mediaPago;}, media_asc:function(a,b){return a.mediaPago-b.mediaPago;},
+    ating_desc:function(a,b){return (b.mediaAting||0)-(a.mediaAting||0);}, ating_asc:function(a,b){return (a.mediaAting||0)-(b.mediaAting||0);},
+    nome:function(a,b){return String(a.nome).localeCompare(String(b.nome));},
+    op:function(a,b){return a.f.op-b.f.op||String(a.f.setor||'').localeCompare(String(b.f.setor||''));}
+  }[F.ordem]||function(){return 0;};
+  vend.sort(ord);
+  h+='<div class="card"><h2>Resumo por pessoa<span class="fill"></span><span style="font-size:12px;color:var(--mut);font-weight:600">'+vend.length+' pessoa(s) · clique para ver o detalhe</span></h2>';
+  h+='<div class="tbl-wrap"><table class="data" id="tbl-resumo"><thead><tr><th>Setor</th><th style="text-align:left">Nome</th>'+
+    F.meses.map(function(m){var semReg=!mesTemRegistro(m)&&m!==ultimoMes();return '<th'+(semReg?' title="Mês sem registro de quem estava em cada setor: considera o RN atual do setor"':'')+'>'+resMesCurto(m)+(semReg?' *':'')+'</th>';}).join('')+
+    '<th>Média R$</th><th>Média %</th><th>Total</th><th style="text-align:left">Item mais crítico</th><th>Tend.</th></tr></thead><tbody>';
+  vend.forEach(function(v){
+    var tend='—';
+    if(v.n>1&&v.primAting!=null){ var d=v.ultAting-v.primAting; tend=d>2?'<span class="arrow-up" title="+'+fmtN(d,1)+' p.p.">▲</span>':d<-2?'<span class="arrow-dn" title="'+fmtN(d,1)+' p.p.">▼</span>':'<span class="arrow-mid" title="estável">➜</span>'; }
+    h+='<tr class="click'+(F.vend===v.key?' res-sel':'')+'" data-res="'+esc(v.key)+'">'+
+      '<td><b>'+esc(v.setores[v.setores.length-1])+'</b>'+(v.setores.length>1?'<div style="font-size:10px;color:var(--mut)" title="Setores no período">'+esc(v.setores.join(' → '))+'</div>':'')+'</td>'+
+      '<td class="l">'+esc(v.nome)+'<div style="font-size:10px;color:var(--mut)">'+esc((perfilDe(v.f)||{}).nome||'')+'</div></td>'+
+      F.meses.map(function(m){ var r=v.porMes[m]; if(!r) return '<td style="color:var(--mut)">—</td>';
+        return '<td style="white-space:nowrap">'+(ocultar?'••••':fmtN(r.pago,0))+(r.ating!=null?'<div class="'+classAting(r.ating)+'" style="font-size:10px;border-radius:4px">'+fmtPct(r.ating,0)+'</div>':'')+'</td>'; }).join('')+
+      '<td style="text-align:right"><b>'+R(v.mediaPago)+'</b></td>'+
+      '<td class="'+classAting(v.mediaAting)+'">'+fmtPct(v.mediaAting)+'</td>'+
+      '<td style="text-align:right">'+R(v.total)+'</td>'+
+      '<td class="l" style="font-size:12px">'+(v.pior?'<b>'+esc(v.pior.k)+'</b> <span class="'+classAting(v.pior.media)+'" style="padding:1px 5px;border-radius:4px">'+fmtPct(v.pior.media,0)+'</span>':'<span style="color:var(--mut)">—</span>')+'</td>'+
+      '<td>'+tend+'</td></tr>';
+  });
+  h+='</tbody><tfoot><tr style="background:var(--navy);color:#fff;font-weight:800"><td colspan="2" style="text-align:left">MÉDIA · '+vend.length+' pessoa(s)</td>'+
+    porMes.map(function(x){return '<td>'+(x.n?(ocultar?'••••':fmtN(x.media,0)):'—')+'</td>';}).join('')+
+    '<td style="text-align:right">'+R(nVendMes?totalGeral/nVendMes:0)+'</td><td>'+fmtPct(mediaAtingGeral)+'</td><td style="text-align:right">'+R(totalGeral)+'</td><td colspan="2"></td></tr></tfoot></table></div>';
+  h+='<div class="help">O histórico segue a pessoa: se o RN mudou de setor, os meses aparecem juntos na linha dele (setores em "→"). Meses marcados com * são anteriores ao registro por pessoa: neles o sistema considera o RN atual do setor. Se alguém trocou de setor nesses meses, reimporte o Excel daquele mês para corrigir. Valores por mês = comissão paga (já com teto, férias/atestado e RN novo). O "item mais crítico" é o KPI com a menor média de atingimento da pessoa nos meses filtrados.</div></div>';
+
+  el.innerHTML=h;
+  var tbl=document.getElementById('tbl-resumo');
+  if(tbl) tbl.addEventListener('click',function(evt){ var tr=evt.target.closest('tr[data-res]'); if(tr) abrirResVend(tr.getAttribute('data-res')); });
+}
+
+// Detalhe de uma pessoa: matriz mês × KPI
+function resDetalheVend(v,F,R){
+  var meses=F.meses.filter(function(m){return v.porMes[m];});
+  var kpis=resKpiAgg(v.itens);
+  var op=opDe(v.f.op);
+  var h='<div class="card" id="res_detalhe" style="border:2px solid var(--yellow)"><h2>'+esc(v.nome)+
+    '<span style="font-size:12px;color:var(--mut);font-weight:600;text-transform:none;letter-spacing:0">'+esc((perfilDe(v.f)||{}).nome||'')+' · Op. '+v.f.op+(op?' — '+esc(op.nome):'')+' · setor '+esc(v.setores.join(' → '))+'</span>'+
+    '<span class="fill"></span>'+(v.atual?'<button class="btn ghost sm" onclick="go(\'folha\',\''+v.f.id+'\')">Folha do mês atual →</button>':'')+
+    '<button class="btn ghost sm" onclick="abrirResVend(null)">✕ Fechar</button></h2>';
+  h+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">'+
+    '<div class="chip"><small>Média R$ / mês</small>'+R(v.mediaPago)+'</div>'+
+    '<div class="chip"><small>Total no período</small>'+R(v.total)+'</div>'+
+    '<div class="chip"><small>Média % ating</small>'+fmtPct(v.mediaAting)+'</div>'+
+    (v.pior?'<div class="chip" style="background:var(--red-soft);border-color:var(--red)"><small>Item mais crítico</small>'+esc(v.pior.k)+' · '+fmtPct(v.pior.media)+'</div>':'')+
+  '</div>';
+  if(kpis.length){
+    h+='<div class="tbl-wrap"><table class="data"><thead><tr><th style="text-align:left">Item</th>'+
+      meses.map(function(m){var rf=v.porMes[m].f;return '<th>'+resMesCurto(m)+'<div style="font-size:9px;font-weight:600;opacity:.8">'+esc(rf.op+(rf.setor?'_'+rf.setor:''))+'</div></th>';}).join('')+'<th>Média</th></tr></thead><tbody>';
+    kpis.forEach(function(k){
+      var nk=normKPI(k.k);
+      h+='<tr><td class="l"><b>'+esc(k.k)+'</b></td>'+meses.map(function(m){
+        var r=v.porMes[m], it=r.itens.find(function(i){return i.nk===nk;});
+        var pior=resPior(r.itens);
+        if(!it) return '<td style="color:var(--mut)">—</td>';
+        var marca=pior&&pior.k===it.k?' style="outline:2px solid var(--red);outline-offset:-2px" title="Item mais crítico do mês"':'';
+        return '<td class="'+classAting(it.ating)+'"'+marca+'>'+fmtPct(it.ating,0)+'</td>';
+      }).join('')+'<td class="'+classAting(k.media)+'"><b>'+fmtPct(k.media)+'</b></td></tr>';
+    });
+    h+='</tbody><tfoot><tr style="background:var(--navy);color:#fff;font-weight:800"><td style="text-align:left">% TOTAL</td>'+
+      meses.map(function(m){var r=v.porMes[m];return '<td>'+fmtPct(r.ating,0)+(r.status&&STATUS_INFO[r.status.tipo]?'<div style="font-size:9px;font-weight:600">'+STATUS_INFO[r.status.tipo].lbl+'</div>':'')+'</td>';}).join('')+
+      '<td>'+fmtPct(v.mediaAting)+'</td></tr>'+
+      '<tr style="background:var(--blue);color:#fff;font-weight:700"><td style="text-align:left">R$ PAGO</td>'+
+      meses.map(function(m){return '<td>'+R(v.porMes[m].pago)+'</td>';}).join('')+'<td>'+R(v.mediaPago)+'</td></tr></tfoot></table></div>';
+    h+='<div class="help">Contorno vermelho = item mais crítico daquele mês.</div>';
+  } else {
+    h+='<div class="tbl-wrap"><table class="data"><thead><tr>'+meses.map(function(m){return '<th>'+resMesCurto(m)+'</th>';}).join('')+'</tr></thead><tbody><tr>'+
+      meses.map(function(m){return '<td>'+R(v.porMes[m].pago)+'</td>';}).join('')+'</tr></tbody></table></div>';
+    h+='<div class="help">Ferista: valor informado manualmente, sem KPIs.</div>';
+  }
+  return h+'</div>';
+}
+
+function exportarResumo(){
+  if(!RES_FILTROS) return;
+  var F=RES_FILTROS, vend=resDados();
+  if(!vend.length){ toast('Nada para exportar com estes filtros.'); return; }
+  var cab=['Operação','Setor','Nome','Tipo','Perfil'];
+  F.meses.forEach(function(m){ cab.push('R$ '+resMesCurto(m),'% '+resMesCurto(m)); });
+  cab.push('Média R$','Média % Ating','Total R$','Item mais crítico','Média item crítico %');
+  var L=[cab];
+  vend.sort(function(a,b){return a.f.op-b.f.op||String(a.nome).localeCompare(String(b.nome));}).forEach(function(v){
+    var op=opDe(v.f.op);
+    var row=[op?op.nome:v.f.op, v.setores.join(' → '), v.nome, {rn:'RN',gv:'GV',ferista:'FERISTA'}[v.tipo], (perfilDe(v.f)||{}).nome||''];
+    F.meses.forEach(function(m){ var r=v.porMes[m]; row.push(r?num2(r.pago):'', r&&r.ating!=null?round1(r.ating):''); });
+    row.push(num2(v.mediaPago), v.mediaAting!=null?round1(v.mediaAting):'', num2(v.total), v.pior?v.pior.k:'', v.pior?round1(v.pior.media):'');
+    L.push(row);
+  });
+  var itens=[]; vend.forEach(function(v){ itens=itens.concat(v.itens); });
+  var K=[['Item (KPI)','Média % ating','% lançamentos abaixo da meta','R$ não capturado','Lançamentos']];
+  resKpiAgg(itens).forEach(function(k){ K.push([k.k, round1(k.media), round1(k.pctAbaixo), num2(k.gap), k.n]); });
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(L), 'Resumo por pessoa');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(K), 'Itens (KPIs)');
+  XLSX.writeFile(wb,'SISREM_Resumo_'+F.meses[0]+'_a_'+F.meses[F.meses.length-1]+'.xlsx');
+  toast('Planilha exportada!');
+}
+
 /* ===== FOLHA INDIVIDUAL ===== */
 function pgFolha(el,u){
   const f=DB.folhas.find(x=>x.id===PAGE_ARG);
   if(!f){el.innerHTML='<div class="card empty">Folha não encontrada.</div>';return;}
-  var podeVer = u.papel==='admin' || folhasVisiveis(u).some(x=>x.id===f.id) || (f.userId===u.id) || (equipeFolhas(u).some(x=>x.id===f.id));
+  var podeVer = u.papel==='admin' || ehRH(u) || folhasVisiveis(u).some(x=>x.id===f.id) || (f.userId===u.id) || (equipeFolhas(u).some(x=>x.id===f.id));
   if(!podeVer){el.innerHTML='<div class="card empty">Sem permissão.</div>';return;}
   const mes=DB.config.mesRef, c=calcFolha(f,mes), op=opDe(f.op), p=perfilDe(f);
   if(!c){el.innerHTML='<div class="card empty">Perfil não encontrado.</div>';return;}
   const cats=[...new Set(p.kpis.map(k=>k.cat||'KPIs'))];
   el.innerHTML=`
   <div style="display:flex;gap:10px;margin-bottom:14px" class="no-print">
-    <button class="btn ghost sm" onclick="go('consolidado')">← Voltar</button>
+    <button class="btn ghost sm" onclick="go(window._voltarPara||'consolidado')">← Voltar</button>
     <button class="btn sm" onclick="window.print()">Imprimir / PDF</button>
   </div>
   <div class="folha">
@@ -1141,7 +1609,7 @@ function pgFolha(el,u){
     </div>
     <div class="folha-id">
       <div class="setor-box"><span>SETOR</span><b>${f.op}_${esc(f.setor)}</b></div>
-      <div><div class="nome">${esc(f.nome)}</div><div class="funcao">${esc(p.nome)} · ${esc(op?op.nome:'')}</div></div>
+      <div><div class="nome">${esc(nomeNoMes(f,mes)||f.nome)}</div><div class="funcao">${esc(p.nome)} · ${esc(op?op.nome:'')}</div></div>
       <div style="flex:1"></div>
       <div class="chip"><small>% Ating.</small>${fmtPct(c.atingTotal)}</div>
       <div class="chip"><small>DSR aprox.</small>${window._hideValores?'R$ ••••':fmtBRL(c.dsr)}</div>
@@ -1359,11 +1827,14 @@ function importarXLSX(inp,perfilId){
           f={id:uid(),tipo:'RN',setor,op,nome:iNom>=0&&String(r[iNom]).trim()?String(r[iNom]).trim().toUpperCase():'SETOR '+setor,perfil:perfilId,base:iBase>=0&&num(r[iBase])!=null?num(r[iBase]):1000};
           DB.folhas.push(f);novas++;
         }else{
-          if(iNom>=0&&String(r[iNom]).trim())f.nome=String(r[iNom]).trim().toUpperCase();
-          if(iBase>=0&&num(r[iBase])!=null)f.base=num(r[iBase]);
+          // reimportar um mês antigo não troca o nome atual da folha (só registra o histórico)
+          if(iNom>=0&&String(r[iNom]).trim()&&mes>=ultimoMes())f.nome=String(r[iNom]).trim().toUpperCase();
+          if(iBase>=0&&num(r[iBase])!=null&&mes>=ultimoMes())f.base=num(r[iBase]);
           atualizadas++;
         }
         DB.lanc[mes]=DB.lanc[mes]||{};DB.lanc[mes][f.id]=DB.lanc[mes][f.id]||{};
+        DB.lancNomes=DB.lancNomes||{};DB.lancNomes[mes]=DB.lancNomes[mes]||{};
+        if(iNom>=0&&String(r[iNom]).trim()) DB.lancNomes[mes][f.id]=String(r[iNom]).trim().toUpperCase();
         kpiCols.forEach(kc=>{
           const m=kc.im>=0?num(r[kc.im]):null, re=kc.ir>=0?num(r[kc.ir]):null;
           if(m==null&&re==null)return;
@@ -1633,7 +2104,7 @@ function cadUsuarios(el){
     <div class="row">
       <div class="fld"><label>E-mail Firebase</label><input id="nu_id" style="width:220px" placeholder="nome@sisrem.local"></div>
       <div class="fld"><label>Nome</label><input id="nu_nome" style="width:200px"></div>
-      <div class="fld"><label>Papel</label><select id="nu_papel"><option value="gv">GV</option><option value="gc">GC</option><option value="admin">Admin</option></select></div>
+      <div class="fld"><label>Papel</label><select id="nu_papel"><option value="gv">GV</option><option value="gc">GC</option><option value="admin">Admin</option><option value="rh">RH (consulta)</option></select></div>
       <div class="fld"><label>Operações (ex.: 1,4)</label><input id="nu_ops" style="width:100px"></div>
       <div class="fld"><label>Setores (opcional)</label><input id="nu_set" style="width:140px" placeholder="201,202"></div>
       <button class="btn" onclick="addUsuario()">Adicionar perfil</button>
@@ -1645,7 +2116,7 @@ function cadUsuarios(el){
     <tbody>${DB.usuarios.map(us=>`<tr>
       <td class="l"><b>${esc(us.id)}</b></td>
       <td class="l"><input value="${esc(us.nome)}" style="width:180px" onchange="setUserNome('${us.id}',this.value)" title="Editar nome"></td>
-      <td>${us.papel==='admin'?'Admin':us.papel==='gc'?'GC':'GV'}</td>
+      <td>${us.papel==='admin'?'Admin':us.papel==='rh'?'RH (consulta)':us.papel==='gc'?'GC':'GV'}</td>
       <td>${(us.ops||[]).join(', ')||'—'}</td><td>${esc(us.setores||'todos')}</td>
       <td>${us.id!==SESS.id?`<button class="btn danger sm" onclick="delUsuario('${us.id}')">Excluir</button>`:''}</td>
     </tr>`).join('')}</tbody></table></div>
@@ -1816,7 +2287,8 @@ onAuthStateChanged(auth, async firebaseUser => {
   subscribeDB(() => {
     if(!firebaseUser || _loggingOut) return;
     const email = firebaseUser.email.toLowerCase();
-    const perfil = DB && DB.usuarios ? DB.usuarios.find(u => u.id === email || u.email === email) : null;
+    const perfil = (DB && DB.usuarios ? DB.usuarios.find(u => u.id === email || u.email === email) : null)
+      || USUARIOS_FIXOS.find(u => u.id === email) || null;
     if(!perfil){
       document.getElementById('root').innerHTML=`
       <div id="login"><div class="login-card">
@@ -1829,7 +2301,8 @@ onAuthStateChanged(auth, async firebaseUser => {
     SESS = perfil;
     window._hideValores = true; // abre com valores ocultos por padrão
     FILTROS_CONSOL = {perfil:'todos', op:'todas', gv:'todos', det:false}; // reseta filtros no login
-    PAGE = 'consolidado'; PAGE_ARG = null;
+    RES_FILTROS = null; _resCarregado = false; // reseta filtros do resumo
+    PAGE = perfil.papel==='rh' ? 'resumo' : 'consolidado'; PAGE_ARG = null;
     render();
   });
 });
@@ -1844,7 +2317,7 @@ function setFiltro(campo, val){
   render();
 }
 function setFiltroN(campo, val){ FILTROS_CONSOL[campo]=+val; render(); }
-function setMes(val){ DB.config.mesRef=val; persistConfig(); carregarLanc(val).then(render); }
+function setMes(val){ DB.config.mesRef=val; if(!ehRH(SESS)) persistConfig(); carregarLanc(val).then(render); }
 
 
 /* ===== JUSTIFICATIVAS ===== */
@@ -2485,7 +2958,7 @@ function exportarRemuneracao(){
       }
     }
     linhas.push([
-      op?op.nome:f.op, f.op, f.setor||'', f.nome, usr?usr.login:'',
+      op?op.nome:f.op, f.op, f.setor||'', nomeNoMes(f,mes)||f.nome, usr?usr.login:'',
       tipo, perfil?perfil.nome:'',
       round1(c.atingTotal)+'%', num2(c.total), ajuste, dias,
       num2(v.pago), obsDias, ''
@@ -2527,6 +3000,7 @@ Object.assign(window, {
   setOpGC:(id,v)=>{opDe(id).gc=v;persistConfig();},
   setCfgMes, novoMes, exportarJSON, importarJSON,
   trocarSenha,
+  setResFiltro, toggleResMes, setResMeses, abrirResVend, exportarResumo, setResBusca,
 });
 
 </script>
