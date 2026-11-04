@@ -74,9 +74,11 @@ table.data td.l{text-align:left}
 table.data tr:hover td{background:var(--blue-soft)}
 table.data tr.click{cursor:pointer}
 .c-ok{background:var(--green-soft);color:var(--green);font-weight:700}
-.c-mid{background:var(--yellow-soft);color:#8a6d00;font-weight:700}
-.c-bad{color:var(--red);font-weight:700}
+.c-mid{background:#FFE7C2;color:#B45309;font-weight:700}
+.c-low{background:#FFD8C7;color:#C2410C;font-weight:700}
+.c-bad{background:var(--red-soft);color:var(--red);font-weight:700}
 .c-total-hi{background:var(--amber);color:#fff;font-weight:800}
+.c-total-mid{background:#E8590C;color:#fff;font-weight:800}
 .c-total-lo{background:var(--red);color:#fff;font-weight:800}
 .c-total-ok{background:var(--green);color:#fff;font-weight:800}
 .arrow-up{color:var(--green);font-weight:800}
@@ -183,7 +185,7 @@ table.data tr.click{cursor:pointer}
 .res-kpi-extra span{font-size:10px}
 .res-bar{position:relative;height:22px;background:#F0F4F8;border-radius:4px;overflow:hidden}
 .res-bar-fill{height:100%;border-radius:0 4px 4px 0}
-.res-bar-fill.ok{background:var(--green)} .res-bar-fill.mid{background:var(--yellow)} .res-bar-fill.bad{background:var(--red)} .res-bar-fill.navy{background:var(--blue)}
+.res-bar-fill.ok{background:var(--green)} .res-bar-fill.mid{background:var(--amber)} .res-bar-fill.low{background:#E8590C} .res-bar-fill.bad{background:var(--red)} .res-bar-fill.navy{background:var(--blue)}
 .res-bar-lbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:800;color:var(--ink);background:rgba(255,255,255,.85);padding:0 4px;border-radius:3px}
 tr.res-sel td{background:var(--yellow-soft)!important}
 @media(max-width:600px){.res-kpi-row{grid-template-columns:1fr 90px}.res-kpi-row .res-bar{grid-column:1/-1;grid-row:2}}
@@ -609,9 +611,10 @@ function statusOp(mes,op){
   if(temGV||temGC)return{tag:'parcial',txt:'Parecer parcial'};
   return{tag:'previa',txt:'Prévia'};
 }
-const classAting=a=>a==null?'':(a>=100?'c-ok':a>=90?'c-mid':'c-bad');
-const classTotal=a=>a>=95?'c-total-ok':a>=80?'c-total-hi':'c-total-lo';
-const arrow=a=>a>=90?'<span class="arrow-up">▲</span>':a>=80?'<span class="arrow-mid">➜</span>':'<span class="arrow-dn">▼</span>';
+// faixas de cor: ≥100% verde · 90–100% laranja · 80–90% laranja avermelhado · <80% vermelho
+const classAting=a=>a==null?'':(a>=100?'c-ok':a>=90?'c-mid':a>=80?'c-low':'c-bad');
+const classTotal=a=>a>=100?'c-total-ok':a>=90?'c-total-hi':a>=80?'c-total-mid':'c-total-lo';
+const arrow=a=>a>=100?'<span class="arrow-up">▲</span>':a>=80?'<span class="arrow-mid">➜</span>':'<span class="arrow-dn">▼</span>';
 
 /* ===== SHELL & NAV ===== */
 function navFor(u){
@@ -632,7 +635,7 @@ function navFor(u){
   if(u.papel==='gv'||u.papel==='gc'){
     if(minhaFolha(u)||equipeFolhas(u).length) t.splice(1,0,['minha','Minha Remuneração']);
   }
-  if(u.papel==='admin')t.push(['resumo','Resumo & Análises']);
+  t.push(['resumo','Resumo & Análises']); // todos os usuários (cada um vê o que já pode ver)
   if(u.papel==='admin')t.push(['lanc','Lançamentos'],['importar','Importar Excel'],['cadastros','Cadastros'],['config','Config & Backup']);
   t.push(['senha','Minha senha']);
   return t;
@@ -1212,7 +1215,7 @@ function resTipoFolha(f){
   return 'rn';
 }
 function resFiltrosPadrao(){
-  return {meses:Object.keys(DB.meses||{}).sort(), op:'todas', tipo:'rn', perfil:'todos', busca:'', ordem:'media_desc', vend:null};
+  return {meses:Object.keys(DB.meses||{}).sort(), op:'todas', gv:'todos', tipo:'rn', perfil:'todos', busca:'', ordem:'media_desc', vend:null};
 }
 function setResFiltro(campo,val){
   RES_FILTROS[campo]=val;
@@ -1290,13 +1293,30 @@ function resChavePessoa(nome,f){
   return 'p:'+n;
 }
 // Monta o conjunto de dados filtrado — agrupado pela PESSOA (nome no mês), não pelo setor
+// Folhas que o usuário pode ver no resumo — mesma regra das outras telas:
+// admin/RH: tudo · GC: RNs das suas operações + GVs da equipe + a própria · GV: RNs dos seus setores + a própria
+function resFolhasPermitidas(u){
+  if(u.papel==='admin'||ehRH(u)) return DB.folhas||[];
+  var ids={}, r=[];
+  function add(f){ if(f&&!ids[f.id]){ ids[f.id]=1; r.push(f); } }
+  folhasVisiveis(u).forEach(function(f){ if(!ehPerfilGerente(f.perfil)) add(f); });
+  equipeFolhas(u).forEach(add);
+  add(minhaFolha(u));
+  return r;
+}
+// A folha pertence ao gerente de vendas escolhido no filtro?
+function resDoGV(f,gvId){
+  if(ehPerfilGerente(f.perfil)) return f.userId===gvId;
+  return gvDaFolha(f).some(function(g){return g.id===gvId;});
+}
 function resDados(){
   var F=RES_FILTROS, busca=normKPI(F.busca||'');
   var pessoas={}, ordem=[];
-  (DB.folhas||[]).forEach(function(f){
+  resFolhasPermitidas(SESS).forEach(function(f){
     var t=resTipoFolha(f);
     if(F.tipo!=='todos' && t!==F.tipo) return;
     if(F.op!=='todas' && f.op!==+F.op) return;
+    if(F.gv && F.gv!=='todos' && !resDoGV(f,F.gv)) return;
     if(F.perfil!=='todos' && f.perfil!==F.perfil) return;
     F.meses.forEach(function(m){
       var nome=nomeNoMes(f,m);
@@ -1340,7 +1360,7 @@ function resBarra(pct, max, cls, rotulo, titulo){
   var w=Math.max(0,Math.min(100,(pct||0)/max*100));
   return '<div class="res-bar" title="'+esc(titulo||'')+'"><div class="res-bar-fill '+cls+'" style="width:'+w+'%"></div><span class="res-bar-lbl">'+rotulo+'</span></div>';
 }
-function resClsAting(a){ return a==null?'':(a>=100?'ok':a>=90?'mid':'bad'); }
+function resClsAting(a){ return a==null?'':(a>=100?'ok':a>=90?'mid':a>=80?'low':'bad'); }
 
 function pgResumo(el,u){
   if(!RES_FILTROS) RES_FILTROS=resFiltrosPadrao();
@@ -1362,7 +1382,20 @@ function pgResumo(el,u){
   var vend=resDados();
 
   // ---------- filtros ----------
-  var optsOp='<option value="todas">Todas as operações</option>'+DB.operacoes.map(function(o){return '<option value="'+o.id+'" '+(''+o.id===''+F.op?'selected':'')+'>'+o.id+' — '+esc(o.nome)+'</option>';}).join('');
+  var opsU=userOps(u);
+  var optsOp='<option value="todas">Todas as operações</option>'+DB.operacoes.filter(function(o){return opsU.includes(o.id);}).map(function(o){return '<option value="'+o.id+'" '+(''+o.id===''+F.op?'selected':'')+'>'+o.id+' — '+esc(o.nome)+'</option>';}).join('');
+  // filtro de gerente de vendas (não aparece para o próprio GV)
+  var gvsRes=(DB.usuarios||[]).filter(function(g){
+    if(g.papel!=='gv') return false;
+    var gops=g.ops||[];
+    if(!gops.some(function(o){return opsU.includes(o);})) return false;
+    return F.op==='todas' || gops.includes(+F.op);
+  }).sort(function(a,b){return a.nome.localeCompare(b.nome);});
+  if(F.gv!=='todos' && !gvsRes.some(function(g){return g.id===F.gv;})) F.gv='todos';
+  var optsGvRes='<option value="todos">Todos os GVs</option>'+gvsRes.map(function(g){
+    var on=(g.ops||[]).map(function(o){var oo=opDe(o);return oo?oo.nome:o;}).join('/');
+    return '<option value="'+esc(g.id)+'" '+(g.id===F.gv?'selected':'')+'>'+esc(g.nome)+' ('+esc(on)+')</option>';
+  }).join('');
   var tipos=[['rn','Vendedores (RNs)'],['gv','Gerentes de Vendas'],['ferista','Feristas / Reserva'],['todos','Todos']];
   var optsTipo=tipos.map(function(t){return '<option value="'+t[0]+'" '+(F.tipo===t[0]?'selected':'')+'>'+t[1]+'</option>';}).join('');
   var perfisTipo=(DB.perfis||[]).filter(function(p){
@@ -1381,6 +1414,7 @@ function pgResumo(el,u){
     '<div class="fld"><label>Vendedor (nome)</label><input id="res_busca" placeholder="Digite o nome…" value="'+esc(F.busca)+'" oninput="setResBusca(this.value)" style="width:220px"></div>'+
     '<div class="fld"><label>Tipo</label><select onchange="setResFiltro(\'tipo\',this.value)">'+optsTipo+'</select></div>'+
     '<div class="fld"><label>Operação</label><select onchange="setResFiltro(\'op\',this.value)">'+optsOp+'</select></div>'+
+    (u.papel!=='gv'?'<div class="fld"><label>Gerente de Vendas</label><select onchange="setResFiltro(\'gv\',this.value)">'+optsGvRes+'</select></div>':'')+
     '<div class="fld"><label>Perfil</label><select onchange="setResFiltro(\'perfil\',this.value)">'+optsPerf+'</select></div>'+
     '<div class="fld"><label>Ordenar</label><select onchange="setResFiltro(\'ordem\',this.value)">'+optsOrd+'</select></div>'+
   '</div>';
