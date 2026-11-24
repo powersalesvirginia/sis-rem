@@ -109,6 +109,13 @@ table.data tr.click{cursor:pointer}
 .kpi-card{border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .kpi-card h4{background:var(--blue);color:#fff;font-family:'Archivo';font-size:12px;letter-spacing:.05em;padding:7px 10px;text-align:center;text-transform:uppercase}
 .kpi-card .vals{display:grid;grid-template-columns:1fr 1fr 1fr}
+.kpi-card .vals.tend5{grid-template-columns:repeat(5,1fr)}
+.kpi-card .vals .sub{display:block;font-size:10px;font-weight:500;color:var(--mut)}
+.tend-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--blue-soft);border:1px solid var(--blue);border-radius:10px;padding:10px 16px;margin:0 0 14px;font-size:13px;color:var(--navy)}
+.tend-banner b{font-family:'Archivo'}
+.tend-banner .tb-bar{flex:1;min-width:140px;height:8px;background:#fff;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.tend-banner .tb-bar i{display:block;height:100%;background:var(--blue)}
+.sub-real{display:block;font-size:10px;font-weight:500;opacity:.75}
 .kpi-card .vals div{padding:7px 4px;text-align:center;border-top:1px solid var(--line)}
 .kpi-card .vals .lbl{font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;background:#F5F8FA;border-top:none;padding:5px 4px}
 .kpi-card .vals b{font-size:13px}
@@ -586,19 +593,47 @@ function lancDoKPI(lanc, nomeKPI){
   }
   return null;
 }
+/* ===== TENDÊNCIA (projeção do fechamento) =====
+ * Tendência = Real ÷ dias realizados × dias úteis.
+ * Mês fechado (dias realizados = dias úteis, ou campo vazio) → fator 1, nada muda.
+ * KPIs marcados com "naoProjetar" usam o realizado como está (ex.: positivação).
+ */
+function infoTend(mes){
+  const cfg=DB.meses[mes]||{};
+  const du=+cfg.dUteis||0;
+  const dr=(cfg.dRealiz==null||cfg.dRealiz==='')?du:+cfg.dRealiz;
+  const ativo=du>0 && dr>0 && dr<du;
+  return {ativo:ativo, fator:ativo?du/dr:1, dUteis:du, dRealiz:dr};
+}
 function calcFolha(f,mes){
   const p=perfilDe(f); if(!p)return null;
   const lanc=(DB.lanc[mes]||{})[f.id]||{};
+  const tend=infoTend(mes);
   const itens=p.kpis.map(k=>{
-    const l=lancDoKPI(lanc, k.k), a=atingKPI(l,k);
+    const l=lancDoKPI(lanc, k.k);
+    const meta=l&&l.meta!=null?l.meta:null, real=l&&l.real!=null?l.real:null;
+    const projeta=tend.ativo && !k.naoProjetar;
+    const realTend=real==null?null:(projeta?real*tend.fator:real);
+    const a=atingKPI(real==null?l:{meta:meta,real:realTend},k);   // atingimento pela tendência
+    const aReal=atingKPI(l,k);                                     // atingimento do realizado até hoje
     const vItem=f.base*k.peso/100;
-    return{...k,meta:l&&l.meta!=null?l.meta:null,real:l&&l.real!=null?l.real:null,ating:a,vItem,rs:a==null?0:vItem*a/100};
+    return{...k,meta,real,realTend,projetado:projeta,ating:a,atingReal:aReal,vItem,rs:a==null?0:vItem*a/100};
   });
   const atingTotal=itens.reduce((s,i)=>s+(i.ating??0)*i.peso/100,0);
+  const atingTotalReal=itens.reduce((s,i)=>s+(i.atingReal??0)*i.peso/100,0);
   const total=itens.reduce((s,i)=>s+i.rs,0);
   const cfg=DB.meses[mes]||{dUteis:0,nUteis:0,dRealiz:0};
   const dsr=cfg.dUteis?total/cfg.dUteis*(cfg.nUteis||0):0;
-  return{itens,atingTotal,total,dsr,cfg};
+  return{itens,atingTotal,atingTotalReal,total,dsr,cfg,tend};
+}
+// Faixa informativa exibida no topo das telas de remuneração enquanto o mês está em andamento
+function bannerTend(mes){
+  const t=infoTend(mes);
+  if(!t.ativo) return '';
+  const pct=t.dRealiz/t.dUteis*100;
+  return '<div class="tend-banner" role="status">📈 <span><b>Mês em andamento</b> — '+t.dRealiz+' de '+t.dUteis+' dias úteis realizados</span>'+
+    '<span class="tb-bar" aria-hidden="true"><i style="width:'+pct.toFixed(1)+'%"></i></span>'+
+    '<span>Valores e % exibidos são a <b>tendência de fechamento</b> (realizado × '+fmtN(t.fator,2)+').</span></div>';
 }
 function statusOp(mes,op){
   const fech=(DB.fechamento[mes]||{})[op];
@@ -662,6 +697,11 @@ function render(){
   <main id="main"></main>`;
   const P={resumo:pgResumo,consolidado:pgConsolidado,consolgv:pgConsolidadoGV,folha:pgFolha,minha:pgMinhaRem,validacao:pgValidacao,lanc:pgLanc,importar:pgImportar,cadastros:pgCadastros,config:pgConfig,senha:pgSenha};
   (P[PAGE]||pgConsolidado)($('#main'),u);
+  // faixa de tendência no topo das telas de remuneração (mês em andamento)
+  if(['consolidado','consolgv','minha','folha','validacao'].indexOf(PAGE)>=0){
+    const bt=bannerTend(DB.config.mesRef);
+    if(bt) $('#main').insertAdjacentHTML('afterbegin',bt);
+  }
 }
 function go(p,arg){
   if(p==='folha' && PAGE!=='folha') window._voltarPara=PAGE;
@@ -811,6 +851,7 @@ function pgConsolidado(el,u){
 
     // colunas de KPI (só no modo detalhado)
     var thKpis = modoDet ? p.kpis.map(function(k){return '<th>'+esc(k.k)+'</th>';}).join('') : '';
+    var emAnd = infoTend(mes).ativo;
     var thExtra='';
     if(ehAdmin){ thExtra='<th>GV Aprovou</th><th>Justif.</th>'; }
     else { if(podeJustificar) thExtra+='<th>Justif.</th>'; if(podeCheck) thExtra+='<th title="Marque os RNs que você revisou e aprovou">✔ OK</th>'; }
@@ -830,7 +871,7 @@ function pgConsolidado(el,u){
       var chkOk=chkObj&&chkObj.ok;
       var chkTitle=chkOk?'Aprovado por você em '+chkObj.data:'Clique para marcar como "De acordo"';
 
-      var kpiCells = modoDet ? x.c.itens.map(function(i){return '<td class="'+classAting(i.ating)+'" data-fid="'+fid+'">'+fmtPct(i.ating)+'</td>';}).join('') : '';
+      var kpiCells = modoDet ? x.c.itens.map(function(i){return '<td class="'+classAting(i.ating)+'" data-fid="'+fid+'">'+fmtPct(i.ating)+(emAnd&&i.projetado?'<span class="sub-real">real '+fmtPct(i.atingReal)+'</span>':'')+'</td>';}).join('') : '';
 
       var justCell='', checkCell='';
       if(ehAdmin){
@@ -862,6 +903,7 @@ function pgConsolidado(el,u){
         '<td><b>'+x.f.op+'_'+esc(x.f.setor)+'</b></td>'+
         '<td class="l">'+esc(nomeNoMes(x.f,mes)||x.f.nome)+statusTag(fid)+(somenteLeitura?'':' <button class="rn-status-btn" data-status="'+fid+'" title="Marcar Férias / Atestado / Novo">⚑</button>')+'</td>'+
         kpiCells+
+        (emAnd?'<td class="'+classAting(x.c.atingTotalReal)+'" data-fid="'+fid+'">'+fmtPct(x.c.atingTotalReal)+'</td>':'')+
         '<td class="'+classTotal(x.c.atingTotal)+'" data-fid="'+fid+'">'+fmtPct(x.c.atingTotal)+'</td>'+
         '<td data-fid="'+fid+'">'+arrow(x.c.atingTotal)+'</td>'+
         '<td style="text-align:right" data-fid="'+fid+'">'+comissaoCell(fid,x.c.total,ocultar)+'</td>'+
@@ -876,6 +918,7 @@ function pgConsolidado(el,u){
       return vals.reduce(function(s,v){return s+v;},0)/vals.length;
     }) : [];
     var mediaAting=(function(){var vals=linhas.map(function(x){return x.c.atingTotal;}).filter(function(v){return v!=null;});return vals.length?vals.reduce(function(s,v){return s+v;},0)/vals.length:0;})();
+    var mediaAtingReal=(function(){var vals=linhas.map(function(x){return x.c.atingTotalReal;}).filter(function(v){return v!=null;});return vals.length?vals.reduce(function(s,v){return s+v;},0)/vals.length:0;})();
     var somaComissao=linhas.reduce(function(s,x){return s+valorPago(x.f.id,x.c.total||0,x.f.base||0).pago;},0);
     var mediaComissao=nRns?somaComissao/nRns:0;
     var tfKpiCells = modoDet ? mediasKpi.map(function(m){return '<td class="'+classAting(m)+'"><b>'+(m==null?'—':fmtPct(m))+'</b></td>';}).join('') : '';
@@ -887,17 +930,18 @@ function pgConsolidado(el,u){
       '<tr style="background:var(--navy);color:#fff;font-weight:800">'+
         '<td colspan="2" style="text-align:left;font-family:\'Archivo\'">MÉDIA · '+nRns+' RN(s)</td>'+
         tfKpiCells+
+        (emAnd?'<td style="color:#fff">'+fmtPct(mediaAtingReal)+'</td>':'')+
         '<td class="'+classTotal(mediaAting)+'" style="color:#fff">'+fmtPct(mediaAting)+'</td><td></td>'+
         '<td style="text-align:right">'+(ocultar?'R$ ••••':fmtBRL(mediaComissao))+'</td>'+tfExtra+'</tr>'+
       '<tr style="background:var(--blue);color:#fff;font-weight:700;font-size:12px">'+
         '<td colspan="2" style="text-align:left">SOMA COMISSÃO</td>'+
-        '<td colspan="'+(nKpiCols+2)+'"></td>'+
+        '<td colspan="'+(nKpiCols+2+(emAnd?1:0))+'"></td>'+
         '<td style="text-align:right;font-family:\'Archivo\';font-size:14px">'+(ocultar?'R$ ••••••':fmtBRL(somaComissao))+'</td>'+tfExtra+'</tr>'+
     '</tfoot>';
 
     h+='<div class="tbl-wrap"><table class="data tbl-consol" id="'+tblId+'">'+
       '<thead><tr><th>Setor</th><th style="text-align:left">Nome</th>'+thKpis+
-      '<th>% Ating</th><th></th><th>R$ Comissão</th>'+thExtra+'</tr></thead>'+
+      (emAnd?'<th title="Atingimento do realizado até hoje, sem projeção">% Real</th><th title="Projeção de fechamento do mês">% Tend</th>':'<th>% Ating</th>')+'<th></th><th>'+(emAnd?'R$ Tendência':'R$ Comissão')+'</th>'+thExtra+'</tr></thead>'+
       '<tbody>'+rows+'</tbody>'+tfoot+'</table></div>';
     return {html:h, linhas:linhas};
   }
@@ -1645,7 +1689,7 @@ function pgFolha(el,u){
       <div class="setor-box"><span>SETOR</span><b>${f.op}_${esc(f.setor)}</b></div>
       <div><div class="nome">${esc(nomeNoMes(f,mes)||f.nome)}</div><div class="funcao">${esc(p.nome)} · ${esc(op?op.nome:'')}</div></div>
       <div style="flex:1"></div>
-      <div class="chip"><small>% Ating.</small>${fmtPct(c.atingTotal)}</div>
+      ${c.tend.ativo?`<div class="chip"><small>% Real hoje</small>${fmtPct(c.atingTotalReal)}</div><div class="chip"><small>% Tendência</small>${fmtPct(c.atingTotal)}</div>`:`<div class="chip"><small>% Ating.</small>${fmtPct(c.atingTotal)}</div>`}
       <div class="chip"><small>DSR aprox.</small>${window._hideValores?'R$ ••••':fmtBRL(c.dsr)}</div>
       <div class="chip"><small>Comissão base</small>${window._hideValores?'R$ ••••':fmtBRL(f.base)}</div>
       <button class="btn ghost sm no-print" onclick="toggleValores()" title="${window._hideValores?'Exibir valores':'Ocultar valores'}" style="font-size:16px;padding:6px 10px">${window._hideValores?'🙈':'👁'}</button>
@@ -1660,7 +1704,7 @@ function pgFolha(el,u){
             ${its.map(i=>`<tr class="item"><td>${esc(i.k)}</td><td class="r">${i.peso}%</td><td class="r">${window._hideValores?'R$ ••••':'R$ '+fmtN(i.rs,2)}</td></tr>`).join('')}
           </table>`;
         }).join('')}
-        <table><tr class="totalrow"><td>TOTAL TENDÊNCIA</td><td class="r" colspan="2">${window._hideValores?'R$ ••••••':fmtBRL(c.total)}</td></tr>${(function(){
+        <table><tr class="totalrow"><td>${c.tend.ativo?'TOTAL TENDÊNCIA (projeção)':'TOTAL'}</td><td class="r" colspan="2">${window._hideValores?'R$ ••••••':fmtBRL(c.total)}</td></tr>${(function(){
           var s=statusDoRN(f.id);
           if(!s) return '';
           var v=valorPago(f.id,c.total,f.base);
@@ -1683,12 +1727,19 @@ function pgFolha(el,u){
           <div class="grid-kpi">
           ${c.itens.filter(i=>(i.cat||'KPIs')===cat).map(i=>`
             <div class="kpi-card"><h4>${esc(i.k)}</h4>
-              <div class="vals">
-                <div class="lbl">Meta</div><div class="lbl">Real</div><div class="lbl">% Tend</div>
+              ${c.tend.ativo?`<div class="vals tend5">
+                <div class="lbl">Meta</div><div class="lbl">Real</div><div class="lbl">Tend.</div><div class="lbl">% Real</div><div class="lbl">% Tend</div>
+                <div><b>${i.meta==null?'—':fmtN(i.meta,1)}</b></div>
+                <div><b>${i.real==null?'—':fmtN(i.real,1)}</b></div>
+                <div><b>${i.realTend==null?'—':fmtN(i.realTend,1)}</b>${i.projetado?'':'<span class="sub">não projeta</span>'}</div>
+                <div class="${classAting(i.atingReal)}"><b>${fmtPct(i.atingReal)}</b></div>
+                <div class="${classAting(i.ating)}"><b>${fmtPct(i.ating)}</b></div>
+              </div>`:`<div class="vals">
+                <div class="lbl">Meta</div><div class="lbl">Real</div><div class="lbl">% Ating</div>
                 <div><b>${i.meta==null?'—':fmtN(i.meta,1)}</b></div>
                 <div><b>${i.real==null?'—':fmtN(i.real,1)}</b></div>
                 <div class="${classAting(i.ating)}"><b>${fmtPct(i.ating)}</b></div>
-              </div>
+              </div>`}
             </div>`).join('')}
           </div>`).join('')}
       </div>
@@ -2074,6 +2125,10 @@ function cadPerfis(el){
       h+='<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:var(--mut);cursor:pointer" title="Marque para KPIs medidos de 0 a 100% (ex: Atendimento Produtivo). Atingir 100% paga o teto de 125%.">'+
          '<input type="checkbox" '+(k.tetoNoMax?'checked':'')+' onchange="setTetoMax(\''+p.id+'\','+i+',this.checked)">'+
          'Bater 100% paga teto (125%)</label>';
+      // toggle "Não projetar" — KPI que não cresce linearmente ao longo do mês
+      h+='<label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:11px;color:var(--mut);cursor:pointer" title="Marque para KPIs que não devem ser projetados pela tendência (ex.: Positivação, indicadores em %). O realizado é usado como está.">'+
+         '<input type="checkbox" '+(k.naoProjetar?'checked':'')+' onchange="setNaoProjetar(\''+p.id+'\','+i+',this.checked)">'+
+         'Não projetar na tendência</label>';
       h+='</div>';
     });
     // botão adicionar KPI
@@ -2112,6 +2167,7 @@ function setPeso(pid,i,v){DB.perfis.find(x=>x.id===pid).kpis[i].peso=+v||0;persi
 function setCat(pid,i,v){DB.perfis.find(x=>x.id===pid).kpis[i].cat=v;persistConfig();}
 function setTeto(pid,v){var p=DB.perfis.find(x=>x.id===pid);p.teto=+v||0;persistConfig();toast('Teto atualizado: '+(p.teto>0?'R$ '+fmtN(p.teto,0):'sem teto'));}
 function setTetoMax(pid,i,v){DB.perfis.find(x=>x.id===pid).kpis[i].tetoNoMax=!!v;persistConfig();renderCad();}
+function setNaoProjetar(pid,i,v){DB.perfis.find(x=>x.id===pid).kpis[i].naoProjetar=!!v;persistConfig();renderCad();}
 function delKPI(pid,i){DB.perfis.find(x=>x.id===pid).kpis.splice(i,1);persistConfig();renderCad();}
 function addKPI(pid){DB.perfis.find(x=>x.id===pid).kpis.push({k:'NOVO KPI',peso:0,cat:'Volume'});persistConfig();renderCad();}
 function renKPI(pid,i,novo){
@@ -2203,7 +2259,8 @@ function pgConfig(el,u){
       <div class="fld"><label>Dias realizados</label><input type="number" value="${cfg.dRealiz!=null?cfg.dRealiz:cfg.dUteis}" style="width:100px" onchange="setCfgMes('dRealiz',this.value)"></div>
       <div class="fld"><label>N úteis (DSR)</label><input type="number" value="${cfg.nUteis}" style="width:100px" onchange="setCfgMes('nUteis',this.value)"></div>
     </div>
-    <div class="help">DSR = Total ÷ dias úteis × N úteis.</div>
+    <div class="help">DSR = Total ÷ dias úteis × N úteis.<br>
+    <b>Tendência:</b> enquanto <b>Dias realizados</b> for menor que <b>Dias úteis</b>, o sistema projeta o fechamento (Real ÷ dias realizados × dias úteis) e mostra % Real e % Tendência lado a lado. Atualize os dias realizados a cada carga do realizado parcial. No fechamento, iguale aos dias úteis.</div>
   </div>
   <div class="card"><h2>Abrir novo mês</h2>
     <div class="row">
@@ -3019,7 +3076,7 @@ function round1(n){ return Math.round((+n||0)*10)/10; }
 /* ===== EXPOR FUNÇÕES PARA ONCLICKS DO HTML (type=module tem escopo isolado) ===== */
 Object.assign(window, {
   doLogin, doLogout, go, render, renderCad, goSub, setFiltro, setFiltroN, setMes,
-  setPerfil, setTetoMax, setTeto, setFolhaUser, cadFolhasSetOp, cadFolhasBusca,
+  setPerfil, setTetoMax, setNaoProjetar, setTeto, setFolhaUser, cadFolhasSetOp, cadFolhasBusca,
   abrirJust, fecharJust, enviarJust, respJust, abrirPainelJust,
   toggleCheckRn, toggleValores, toggleDetalhe, limparDados, exportarRemuneracao,
   abrirStatus, setStatus, salvarFerista, statusTag, valorPago, minhaFolha, equipeFolhas, pgMinhaRem, selStatusTipo, salvarStatus, atualizarPreviewDias, atualizarPreviewNovo, comissaoCell, fatorDias, diasAusencia,
